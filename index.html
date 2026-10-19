@@ -1,0 +1,1461 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa Tático</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/milsymbol@2.2.0/dist/milsymbol.js"></script>
+<style>
+:root{--bg:#11151a;--panel:#1a2029;--panel2:#202836;--line:#2c3644;--txt:#e6ebf2;--mut:#8c99ab;--acc:#4ea1ff;--warn:#ff5b4f}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font:13px/1.4 system-ui,"Segoe UI",Roboto,sans-serif}
+#app{display:grid;grid-template-columns:320px 1fr 340px;grid-template-rows:50px 1fr auto;height:100vh}
+header{grid-column:1/4;display:flex;align-items:center;gap:8px;padding:0 10px;background:#0b0e12;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header .brand{font-weight:800;letter-spacing:.5px;margin-right:6px}
+aside{background:var(--panel);overflow:auto;padding:10px 12px;border-right:1px solid var(--line)}
+aside#right{border-right:0;border-left:1px solid var(--line)}
+section{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:10px}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:6px 0 8px}
+h4{font-size:12px;color:var(--mut);margin:10px 0 6px}
+main{position:relative;overflow:hidden;background:#0a0d10}
+#map{width:100%;height:100%;display:block;touch-action:none}
+footer{grid-column:1/4;padding:8px 12px;background:#0b0e12;border-top:1px solid var(--line)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.btn{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--acc)}
+.btn.on{background:var(--acc);color:#001a33;border-color:var(--acc);font-weight:700}
+.btn.danger{border-color:#6b2a27;color:#ffb1ab}
+.btn.small{padding:2px 7px}
+input,select{background:#0e131a;color:var(--txt);border:1px solid var(--line);border-radius:5px;padding:4px 6px;font:inherit;min-width:0}
+input[type=color]{padding:0;width:28px;height:24px}
+input[type=number]{width:78px}
+label{display:flex;flex-direction:column;gap:3px;margin:6px 0;color:var(--mut);font-size:12px}
+label.inline{flex-direction:row;align-items:center;gap:6px;color:var(--txt)}
+.item,.fac{padding:6px 8px;border:1px solid var(--line);border-radius:6px;margin-bottom:5px;cursor:pointer;background:#141a22;display:flex;align-items:center;gap:6px}
+.item:hover,.fac:hover{border-color:#44536a}
+.item.cur,.fac.cur{border-color:var(--acc);background:#16263a}
+.item .x{margin-left:auto}
+.fac{flex-wrap:wrap}
+.fac input[type=text]{flex:1 1 120px}
+.fac select{max-width:160px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #000;flex:none}
+.mut{color:var(--mut)}
+.small{font-size:12px}
+.mono{font-family:Consolas,"Courier New",monospace}
+table{width:100%;border-collapse:collapse}
+td{padding:2px 2px}
+td input{width:100%}
+#status{color:#9fd3ff;font-size:12px;min-width:0}
+.tag{font-size:11px;color:var(--mut)}
+details summary{cursor:pointer;color:var(--txt);font-weight:600;margin-bottom:8px}
+.modes .btn{width:100%}
+[hidden]{display:none !important}
+.wiz{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:50}
+.wizbox{background:#1a2029;border:1px solid #2c3644;border-radius:12px;padding:20px;width:min(780px,94vw);max-height:92vh;overflow:auto}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{text-align:left;background:#202836;border:1px solid #2c3644;border-radius:10px;padding:14px;color:#e6ebf2;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}
+.card:hover{border-color:#4ea1ff}
+.card span{color:#8c99ab;font-size:12px}
+.card b{font-size:15px}
+@media (max-width:700px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="brand">MAPA TÁTICO</span>
+    <input id="title" type="text" style="width:300px" onchange="setScene('title',this.value)" aria-label="Título da cena">
+    <button class="btn" onclick="wizOpen()">Novo mapa</button>
+    <button class="btn on" onclick="$('#aiDlg').showModal()">Criar com IA</button>
+    <button class="btn" onclick="$('#imp').click()">Importar JSON</button>
+    <input type="file" id="imp" accept="application/json" hidden onchange="importJSON(this.files[0]); this.value=''">
+    <button class="btn" onclick="exportJSON()">Exportar JSON</button>
+    <button class="btn" onclick="exportPNG()">Exportar PNG</button>
+    <button class="btn" onclick="exportVideo()">Exportar vídeo</button>
+    <label class="inline" style="margin:0">Duração do vídeo (s)
+      <input id="vidSec" type="number" value="20" min="3" max="180" style="width:70px"></label>
+    <span id="status"></span>
+  </header>
+
+  <aside id="left"></aside>
+
+  <main id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg"></svg></main>
+
+  <aside id="right"></aside>
+
+  <div id="wiz" class="wiz" hidden>
+  <div class="wizbox">
+    <h2 style="margin-top:0">Qual mapa você quer fazer?</h2>
+    <p class="mut" style="margin-top:-6px">Escolha o ponto de partida. Você pode trocar depois.</p>
+    <div id="wizContinue" style="margin-bottom:10px"></div>
+    <div id="wizStep1" class="cards">
+      <button class="card" onclick="wizPick('country')"><b>🌍 País inteiro</b><span>Mapa de países. Bom para avanços e controle de territórios.</span></button>
+      <button class="card" onclick="wizPick('city')"><b>🏙️ Cidade ou CEP</b><span>Mapa de ruas a partir de um CEP ou endereço. Bom para movimentos locais e batalhas.</span></button>
+      <button class="card" onclick="wizPick('free')"><b>🎨 Modo livre</b><span>Tela em branco ou sua própria imagem, sem localização real.</span></button>
+      <button class="card" onclick="wizPick('ai')"><b>🤖 Criar com IA</b><span>Descreva o que aconteceu, copie as instruções para uma IA e importe o resultado.</span></button>
+    </div>
+    <div id="wizStep2"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" onclick="wizClose()">Fechar</button></div>
+  </div>
+</div>
+
+<dialog id="aiDlg"style="width:min(780px,95vw);background:#1a2029;color:#e6ebf2;border:1px solid #2c3644;border-radius:10px">
+  <h3 style="margin-top:0">Criar cena com IA</h3>
+  <ol class="small" style="padding-left:18px;margin:0 0 10px">
+    <li>Clique em <b>Copiar instruções</b>.</li>
+    <li>Cole no ChatGPT, Claude ou outra IA, e escreva embaixo o que aconteceu (ex.: "O exército verde avançou sobre a Lituânia com 3 divisões...").</li>
+    <li>Copie a resposta da IA (só o JSON) e cole na caixa abaixo.</li>
+  </ol>
+  <button class="btn" onclick="copyAIPrompt()">Copiar instruções para IA</button>
+  <label style="margin-top:10px">JSON gerado pela IA
+    <textarea id="importBox" rows="12" style="width:100%;font-family:Consolas,monospace;background:#0e131a;color:#e6ebf2;border:1px solid #2c3644;border-radius:5px;padding:6px"></textarea>
+  </label>
+  <div id="importErr" style="color:#ff8a80;white-space:pre-wrap;font-size:12px;margin-top:6px"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:10px">
+    <button class="btn" onclick="$('#aiDlg').close()">Fechar</button>
+    <button class="btn on" onclick="importFromBox()">Criar cena</button>
+  </div>
+</dialog>
+
+<footer>
+    <div class="row">
+      <button class="btn" id="play" onclick="togglePlay()" title="Espaço">▶ Play</button>
+      <button class="btn" onclick="setT(0)" title="Início">⏮</button>
+      <input id="scrub" type="range" min="0" max="72" step="0.05" value="0" style="flex:1;min-width:200px" oninput="setT(+this.value)" aria-label="Linha do tempo">
+      <span id="clock" class="mono" style="min-width:250px;text-align:right"></span>
+      <label class="inline" style="margin:0">Velocidade
+        <select id="speed">
+          <option value="0.25">0,25×</option><option value="0.5">0,5×</option><option value="1">1×</option>
+          <option value="2" selected>2×</option><option value="4">4×</option><option value="8">8×</option>
+        </select></label>
+      <span class="tag">horas de cena por segundo real</span>
+    </div>
+    <div class="row tag" style="margin-top:4px">Espaço = play/pausa · ←/→ = ±1 h (Shift = ±0,25 h) · Arraste uma unidade para mover no instante atual · Roda do mouse = zoom · Arrastar o fundo = mover o mapa</div>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const ms = window.ms;
+const W = 1920, H = 1080;
+const KEY = 'mapa-tatico-v1';
+const LAND = '#e9e4d4', SEA = '#9fb8c4', BORDER = '#8a8170';
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = k => k * k * (3 - 2 * k);
+const r2 = v => Math.round(v * 100) / 100;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const status = m => { $('#status').textContent = m || ''; };
+
+const UNIT_TYPES = {
+  inf:  ['Infantaria',          'SFGPUCI---'],
+  mech: ['Infantaria mecanizada','SFGPUCIM--'],
+  motor:['Infantaria motorizada','SFGPUCIW--'],
+  arm:  ['Blindados',           'SFGPUCA---'],
+  cav:  ['Cavalaria',           'SFGPUCR---'],
+  art:  ['Artilharia',          'SFGPUCFA--'],
+  eng:  ['Engenharia',          'SFGPUCE---'],
+  fort: ['Fortificação',        'SFGPUCF---'],
+  hq:   ['Comando / QG',        'SFGPUH----'],
+  civ:  ['Milícia / civis',     'SFGPUCI---'],
+};
+const ECH = {'':'—', co:'Companhia (I)', bn:'Batalhão (II)', reg:'Regimento (III)', bde:'Brigada (X)', div:'Divisão (XX)', corps:'Corpo (XXX)'};
+const ECH_MARK = {co:'I', bn:'II', reg:'III', bde:'X', div:'XX', corps:'XXX', '':''};
+const AFFIL = [['friend','Amigo (azul)'],['hostile','Hostil (vermelho)'],['neutral','Neutro (verde)'],['unknown','Desconhecido (amarelo)']];
+const MODES = {select:'Selecionar', waypoint:'Mover unidade', territory:'Pintar território', arrow:'Seta de avanço', event:'Evento', corner:'Calibrar imagem'};
+const HINTS = {
+  select: 'Clique numa unidade para editar. Arraste a unidade para mover no instante atual.',
+  waypoint: 'Clique no mapa para mover a unidade selecionada no instante atual.',
+  territory: 'Clique num país para pintar com a força selecionada, a partir do instante atual.',
+  arrow: 'Clique na origem e depois no destino. A seta anima a partir do instante atual por 6 h.',
+  event: 'Clique no mapa para criar um evento (explosão ou nota) no instante atual.',
+  corner: 'Clique em dois cantos opostos da imagem para calibrar sua posição no mapa.'
+};
+
+const DEMO = {
+  title: 'Exemplo: avanço sobre a Lituânia',
+  startDate: '2026-03-01T06:00',
+  durationH: 72,
+  region: {lon0: 19, lat0: 53.4, lon1: 28.2, lat1: 57.6},
+  symbolStyle: 'nato',
+  unitSize: 1,
+  showLabels: true,
+  showTrails: true,
+  factions: [
+    {id:'f1', name:'Exército Verde', color:'#2e7d32', affil:'hostile'},
+    {id:'f2', name:'Exército Azul',  color:'#1565c0', affil:'friend'},
+  ],
+  territories: [
+    {iso:'440', name:'Lituânia', t:0,  faction:'f2'},
+    {iso:'428', name:'Letônia',  t:0,  faction:'f2'},
+    {iso:'616', name:'Polônia',  t:0,  faction:'f2'},
+    {iso:'440', name:'Lituânia', t:30, faction:'f1'},
+  ],
+  units: [
+    {id:'u1', name:'1ª Div. Blindada', faction:'f1', type:'arm', echelon:'div', note:'', path:[{t:0,lat:53.9,lon:27.0},{t:18,lat:55.2,lon:25.5},{t:30,lat:55.7,lon:24.3}]},
+    {id:'u2', name:'Div. Motorizada',  faction:'f1', type:'motor', echelon:'div', note:'', path:[{t:6,lat:52.9,lon:24.0},{t:28,lat:54.7,lon:23.9}]},
+    {id:'u3', name:'3º Reg. Cavalaria', faction:'f1', type:'cav', echelon:'reg', note:'', path:[{t:10,lat:54.1,lon:27.5},{t:34,lat:55.9,lon:23.5}]},
+    {id:'u4', name:'Fortificações Kaunas', faction:'f2', type:'fort', echelon:'bde', note:'', path:[{t:0,lat:54.9,lon:23.9}]},
+    {id:'u5', name:'2º Gr. Artilharia', faction:'f2', type:'art', echelon:'bn', note:'', path:[{t:0,lat:55.2,lon:24.6}]},
+    {id:'u6', name:'Milícia civil', faction:'f2', type:'civ', echelon:'', note:'', path:[{t:0,lat:54.7,lon:25.3}]},
+  ],
+  arrows: [
+    {id:'a1', from:{lat:54.0,lon:27.3}, to:{lat:55.4,lon:24.6}, t0:18, t1:30, kind:'attack', faction:'f1'},
+  ],
+  events: [
+    {id:'e1', t:30, lat:55.7, lon:24.3, kind:'attack', text:'Travessia da ponte', dur:3},
+  ],
+};
+
+let S = {
+  scene: null, t: 0, playing: false, lastTs: 0,
+  mode: 'select', selUnit: null, selArrow: null, selEvent: null,
+  selFaction: 'f2', pending: null, countries: [],
+  admin1: new Map(), paintLevel: 'country',
+};
+let saveTimer = null;
+const SYM = new Map();
+
+/* ---------- cena: carregar, normalizar, salvar ---------- */
+function normalize(s){
+  s.title ??= 'Nova cena';
+  s.startDate ??= '';
+  s.durationH ??= 72;
+  s.region ??= {lon0:19, lat0:53.4, lon1:28.2, lat1:57.6};
+  s.symbolStyle ??= 'nato';
+  s.unitSize ??= 1;
+  s.showLabels ??= true;
+  s.showTrails ??= true;
+  s.mapType ??= 'country';
+  s.factions ??= [];
+  if(!s.factions.length) s.factions = [
+    {id:'f1', name:'Exército Verde', color:'#2e7d32', affil:'hostile'},
+    {id:'f2', name:'Exército Azul',  color:'#1565c0', affil:'friend'},
+  ];
+  s.units ??= [];
+  s.arrows ??= [];
+  s.events ??= [];
+  s.territories ??= [];
+  s.overlay ??= null;
+  /* cenas antigas usavam códigos numéricos de país; convertemos para código de 2 letras */
+  const LEGACY = {'440':'LT','428':'LV','616':'PL','112':'BY','233':'EE','643':'RU','804':'UA','276':'DE','250':'FR','076':'BR','032':'AR','858':'UY'};
+  s.territories.forEach(t => { if(LEGACY[t.iso]) t.iso = LEGACY[t.iso]; });
+  s.units.forEach(u => { u.path ??= []; sortPath(u); });
+  return s;
+}
+function loadScene(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) return normalize(JSON.parse(raw));
+  }catch(_){}
+  return normalize(structuredClone(DEMO));
+}
+function saveSoon(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try{ localStorage.setItem(KEY, JSON.stringify(S.scene)); }
+    catch(_){ status('Não consegui salvar no navegador (imagem grande demais). Use Exportar JSON.'); }
+  }, 300);
+}
+function sortPath(u){ u.path.sort((a, b) => a.t - b.t); }
+
+/* ---------- acesso a dados ---------- */
+const unitById = id => S.scene.units.find(u => u.id === id);
+const facById = id => S.scene.factions.find(f => f.id === id);
+const facColor = id => facById(id)?.color || '#888888';
+
+function posAt(u, t){
+  const p = u.path;
+  if(!p.length || t < p[0].t) return null;
+  if(t >= p[p.length - 1].t) return p[p.length - 1];
+  for(let i = 0; i < p.length - 1; i++){
+    if(t >= p[i].t && t < p[i + 1].t){
+      const a = p[i], b = p[i + 1];
+      const k = smooth((t - a.t) / Math.max(0.0001, b.t - a.t));
+      return {lat: a.lat + (b.lat - a.lat) * k, lon: a.lon + (b.lon - a.lon) * k};
+    }
+  }
+  return p[p.length - 1];
+}
+const isoOf = f => f.properties['hc-a2'];
+const countryAt = (lon, lat) => S.countries.find(c => d3.geoContains(c, [lon, lat]));
+
+/* chave: 'c:ZW' = país inteiro; 'sub:zw-ma' = estado/província */
+function controlAt(t){
+  const m = new Map();
+  for(const e of S.scene.territories){
+    if(e.t > t) continue;
+    const key = e.sub ? 'sub:' + e.sub : 'c:' + e.iso;
+    const cur = m.get(key);
+    if(!cur || e.t >= cur.t) m.set(key, e);
+  }
+  return m;
+}
+
+/* ---------- símbolos ---------- */
+function natoSymbol(type, affil){
+  const base = (UNIT_TYPES[type] || UNIT_TYPES.inf)[1];
+  const a = {friend:'F', hostile:'H', neutral:'N', unknown:'U'}[affil] || 'U';
+  const sidc = ('S' + a + base.slice(2)).padEnd(15, '-');
+  const sym = new ms.Symbol(sidc, {size: 100});
+  const raw = sym.asSVG();
+  const inner = raw.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+  const an = sym.getAnchor(), sz = sym.getSize();
+  const k = 36 / sz.width;
+  return {markup: `<g transform="scale(${k}) translate(${-an.x},${-an.y})">${inner}</g>`, w: 36, h: sz.height * k};
+}
+function blockSymbol(type, fac){
+  const w = 44, h = 30, hw = w / 2, hh = h / 2;
+  const c = fac.color, ink = '#0d0d1c';
+  const line = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`;
+  let g = `<rect x="${-hw + 3}" y="${-hh + 3}" width="${w}" height="${h}" fill="#000" opacity="0.55"/>`;
+  g += `<rect x="${-hw}" y="${-hh}" width="${w}" height="${h}" rx="3" fill="${c}" stroke="#0a0a1a" stroke-width="1.6"/>`;
+  g += `<rect x="${-hw + 2}" y="${-hh + 2}" width="${w - 4}" height="${h / 2 - 3}" rx="2" fill="#ffffff" opacity="0.18"/>`;
+  g += `<rect x="${-hw + 3}" y="${-hh + 3}" width="${w - 6}" height="${h - 6}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="1"/>`;
+  const X = line(-hw + 5, -hh + 5, hw - 5, hh - 5) + line(hw - 5, -hh + 5, -hw + 5, hh - 5);
+  switch(type){
+    case 'art':
+      g += `<circle cx="-7" cy="4" r="5" fill="none" stroke="${ink}" stroke-width="2.2"/><circle cx="-7" cy="4" r="1.6" fill="${ink}"/>`;
+      g += `<path d="M-3,0 L13,-7 L14,-4 L-2,4 Z" fill="${ink}"/>`;
+      break;
+    case 'cav':  g += line(-hw + 5, hh - 5, hw - 5, -hh + 5); break;
+    case 'arm':  g += X + `<rect x="-8" y="-6" width="16" height="12" fill="none" stroke="${ink}" stroke-width="1.6"/>`; break;
+    case 'fort': g += `<rect x="-11" y="-7" width="22" height="14" fill="none" stroke="${ink}" stroke-width="2"/>`; break;
+    case 'hq':   g += `<text x="0" y="5" text-anchor="middle" font-size="13" font-weight="800" fill="${ink}">HQ</text>`; break;
+    case 'eng':  g += `<text x="0" y="5" text-anchor="middle" font-size="13" font-weight="800" fill="${ink}">E</text>`; break;
+    case 'civ':  g += `<circle r="8" fill="none" stroke="${ink}" stroke-width="2" stroke-dasharray="3 2"/>`; break;
+    default:     g += X;
+  }
+  return {markup: g, w, h};
+}
+function glyphSymbol(type, fac, style){
+  if(style === 'block') return blockSymbol(type, fac);
+  const w = 40, h = 28, hw = w / 2, hh = h / 2;
+  const pact = style === 'pact';
+  const fill = pact ? fac.color : '#f3ead2';
+  const stroke = pact ? '#111111' : fac.color;
+  const ink = pact ? '#ffffff' : '#1a1a1a';
+  const sw = pact ? 1.2 : 3;
+  const dash = type === 'civ' ? ' stroke-dasharray="4 3"' : '';
+  const line = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ink}" stroke-width="1.8"/>`;
+  const txt = (s, y = 4) => `<text x="0" y="${y}" text-anchor="middle" font-size="11" font-weight="700" fill="${ink}">${s}</text>`;
+  let g = `<rect x="${-hw}" y="${-hh}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"${dash}/>`;
+  const X = line(-hw, -hh, hw, hh) + line(hw, -hh, -hw, hh);
+  switch(type){
+    case 'inf':  g += X; break;
+    case 'mech': g += X + `<ellipse rx="7" ry="5" fill="none" stroke="${ink}" stroke-width="1.5"/>`; break;
+    case 'motor':g += X + txt('M', 4); break;
+    case 'arm':  g += `<ellipse rx="14" ry="8" fill="none" stroke="${ink}" stroke-width="2"/>`; break;
+    case 'cav':  g += line(-hw, hh, hw, -hh) + `<circle r="2.5" fill="${ink}"/>`; break;
+    case 'art':  g += `<circle r="5" fill="${ink}"/>`; break;
+    case 'fort': g += `<rect x="-12" y="-8" width="24" height="16" fill="none" stroke="${ink}" stroke-width="1.5" stroke-dasharray="3 2"/>`; break;
+    case 'eng':  g += txt('E'); break;
+    case 'hq':   g += txt('HQ'); break;
+    case 'civ':  g += `<circle r="9" fill="none" stroke="${ink}" stroke-width="1.5" stroke-dasharray="3 2"/>`; break;
+    default:     g += X;
+  }
+  return {markup: g, w, h};
+}
+function symbolFor(u, fac){
+  const style = S.scene.symbolStyle;
+  const key = [style, u.type, fac.color, fac.affil].join('|');
+  if(!SYM.has(key)){
+    SYM.set(key, style === 'nato' ? natoSymbol(u.type, fac.affil) : glyphSymbol(u.type, fac, style));
+  }
+  return {...SYM.get(key), key};
+}
+
+/* ---------- mapa ---------- */
+const svg = d3.select('#map').attr('viewBox', `0 0 ${W} ${H}`);
+const bgRect = svg.append('rect').attr('width', W).attr('height', H).attr('fill', SEA);
+const world = svg.append('g').attr('id', 'world');
+const gBase = world.append('g');
+const gOverlay = world.append('g');
+const gLand = world.append('g');
+const gSub = world.append('g');
+const gTrails = world.append('g');
+const gArrows = world.append('g');
+const gEvents = world.append('g');
+const gUnits = world.append('g');
+const gLabels = svg.append('g');
+const hud = svg.append('g').attr('id', 'hud');
+const hudTitle = hud.append('text').attr('x', 30).attr('y', 52).attr('font-size', 34).attr('font-weight', 800).attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 5).attr('paint-order', 'stroke');
+const hudClock = hud.append('text').attr('x', W - 30).attr('y', 52).attr('text-anchor', 'end').attr('font-size', 30).attr('font-family', 'Consolas, monospace').attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 5).attr('paint-order', 'stroke');
+const hudLegend = hud.append('g');
+const hudAttr = hud.append('text').attr('x', W - 12).attr('y', H - 10).attr('text-anchor', 'end').attr('font-size', 14).attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 3).attr('paint-order', 'stroke');
+
+let proj = d3.geoMercator();
+let pathGen = d3.geoPath(proj);
+let landSel = null;
+
+const zoom = d3.zoom()
+  .scaleExtent([0.3, 25])
+  .filter(e => {
+    if(e.type === 'wheel') return true;
+    if(e.button) return false;
+    return !(e.target.closest && e.target.closest('g.unit'));
+  })
+  .on('zoom', e => {
+    world.attr('transform', e.transform);
+    if(S.scene && S.scene.mapType === 'tiles') scheduleBase();
+    renderLabels();
+  });
+let baseTimer = null;
+function scheduleBase(){ clearTimeout(baseTimer); baseTimer = setTimeout(drawBase, 150); }
+svg.call(zoom).on('dblclick.zoom', null);
+
+function fitRegion(){
+  const b = S.scene.region;
+  const mid = (b.lon0 + b.lon1) / 2, midLat = (b.lat0 + b.lat1) / 2;
+  const pts = {type:'MultiPoint', coordinates:[
+    [b.lon0,b.lat0],[b.lon1,b.lat0],[b.lon1,b.lat1],[b.lon0,b.lat1],[mid,b.lat0],[mid,b.lat1],[b.lon0,midLat],[b.lon1,midLat]
+  ]};
+  proj = d3.geoMercator().fitExtent([[60, 100], [W - 60, H - 170]], pts);
+  pathGen = d3.geoPath(proj);
+  if(landSel) landSel.attr('d', pathGen);
+  svg.call(zoom.transform, d3.zoomIdentity);
+}
+
+function buildLand(){
+  landSel = gLand.selectAll('path').data(S.countries).join('path')
+    .attr('d', pathGen)
+    .attr('stroke', BORDER)
+    .attr('stroke-width', 0.8)
+    .attr('vector-effect', 'non-scaling-stroke');
+  landSel.append('title').text(d => d.properties.name);
+}
+
+function drawHud(){
+  hudTitle.text(S.scene.title || '');
+  hudClock.text(clockText());
+  hudLegend.selectAll('*').remove();
+  S.scene.factions.forEach((f, i) => {
+    const y = H - 40 - (S.scene.factions.length - 1 - i) * 30;
+    hudLegend.append('rect').attr('x', 30).attr('y', y - 16).attr('width', 18).attr('height', 18).attr('fill', f.color).attr('stroke', '#000');
+    hudLegend.append('text').attr('x', 56).attr('y', y - 2).attr('font-size', 20).attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 4).attr('paint-order', 'stroke').text(f.name);
+  });
+}
+
+function renderMap(){
+  if(!landSel) return;
+  const t = S.t, sc = S.scene;
+  const ctrl = controlAt(t);
+
+  landSel.attr('fill', d => {
+    const c = ctrl.get('c:' + isoOf(d));
+    return c ? facColor(c.faction) : LAND;
+  }).attr('fill-opacity', d => ctrl.has('c:' + isoOf(d)) ? 0.55 : 1);
+  drawSub(ctrl);
+
+  // rastros
+  gTrails.selectAll('*').remove();
+  if(sc.showTrails){
+    for(const u of sc.units){
+      const pts = u.path.filter(p => p.t <= t).map(p => [p.lon, p.lat]);
+      const cur = posAt(u, t);
+      if(cur && pts.length) pts.push([cur.lon, cur.lat]);
+      if(pts.length < 2) continue;
+      const d = pts.map((p, i) => { const q = proj(p); return (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join('');
+      gTrails.append('path').attr('d', d).attr('fill', 'none').attr('stroke', facColor(u.faction))
+        .attr('stroke-width', 3).attr('stroke-dasharray', '10 8').attr('opacity', 0.8);
+    }
+  }
+
+  // setas de avanço
+  gArrows.selectAll('*').remove();
+  for(const a of sc.arrows){
+    if(t < a.t0) continue;
+    const p = t >= a.t1 ? 1 : clamp((t - a.t0) / Math.max(0.01, a.t1 - a.t0), 0, 1);
+    const A = proj([a.from.lon, a.from.lat]), B = proj([a.to.lon, a.to.lat]);
+    if(!A || !B) continue;
+    const dx = B[0] - A[0], dy = B[1] - A[1], len = Math.hypot(dx, dy) || 1;
+    const bend = len * 0.15;
+    const C = [(A[0] + B[0]) / 2 - dy / len * bend, (A[1] + B[1]) / 2 + dx / len * bend];
+    const col = facColor(a.faction);
+    const el = gArrows.append('path')
+      .attr('d', `M${A[0]},${A[1]} Q${C[0]},${C[1]} ${B[0]},${B[1]}`)
+      .attr('fill', 'none').attr('stroke', col).attr('stroke-width', 10).attr('stroke-linecap', 'round').attr('opacity', 0.92);
+    const L = el.node().getTotalLength();
+    if(a.kind === 'withdraw') el.attr('stroke-dasharray', p >= 1 ? '18 12' : `${L * p} ${L}`);
+    else el.attr('stroke-dasharray', `${L * p} ${L}`);
+    if(p > 0.97){
+      const ux = B[0] - C[0], uy = B[1] - C[1], ul = Math.hypot(ux, uy) || 1;
+      const ex = ux / ul, ey = uy / ul, bx = B[0] - ex * 34, by = B[1] - ey * 34;
+      const px = -ey * 18, py = ex * 18;
+      gArrows.append('polygon')
+        .attr('points', `${B[0]},${B[1]} ${bx + px},${by + py} ${bx - px},${by - py}`)
+        .attr('fill', col).attr('stroke', '#000').attr('stroke-width', 2);
+    }
+  }
+
+  // eventos
+  gEvents.selectAll('*').remove();
+  for(const e of sc.events){
+    const dur = e.dur || 3;
+    if(t < e.t || t > e.t + dur) continue;
+    const P = proj([e.lon, e.lat]);
+    if(!P) continue;
+    const k = clamp((t - e.t) / dur, 0, 1);
+    if(e.kind === 'note'){
+      gEvents.append('circle').attr('cx', P[0]).attr('cy', P[1]).attr('r', 7).attr('fill', '#ffd54f').attr('stroke', '#000').attr('stroke-width', 2);
+    }else{
+      gEvents.append('circle').attr('cx', P[0]).attr('cy', P[1]).attr('r', 12 + 40 * k)
+        .attr('fill', 'none').attr('stroke', '#ff3b30').attr('stroke-width', 5).attr('opacity', 1 - k * 0.85);
+      gEvents.append('circle').attr('cx', P[0]).attr('cy', P[1]).attr('r', 7).attr('fill', '#ff3b30').attr('stroke', '#000');
+    }
+    if(e.text){
+      gEvents.append('text').attr('x', P[0]).attr('y', P[1] - 46).attr('text-anchor', 'middle')
+        .attr('font-size', 22).attr('font-weight', 700).attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 5).attr('paint-order', 'stroke').text(e.text);
+    }
+  }
+
+  drawUnits(t);
+  drawHud();
+  renderLabels();
+}
+
+function drawUnits(t){
+  gUnits.attr('pointer-events', (S.mode === 'select' || S.mode === 'waypoint') ? 'all' : 'none');
+  const data = [];
+  for(const u of S.scene.units){ const p = posAt(u, t); if(p) data.push({u, p}); }
+
+  const sel = gUnits.selectAll('g.unit').data(data, d => d.u.id);
+  sel.exit().remove();
+
+  const en = sel.enter().append('g').attr('class', 'unit').style('cursor', 'grab');
+  en.append('circle').attr('class', 'ring').attr('fill', 'none').attr('stroke', '#ffd54f').attr('stroke-width', 3).attr('stroke-dasharray', '6 4');
+  en.append('g').attr('class', 'sym');
+  en.append('text').attr('class', 'ech').attr('text-anchor', 'middle').attr('font-size', 15).attr('font-weight', 800)
+    .attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 4).attr('paint-order', 'stroke');
+  en.append('text').attr('class', 'lbl').attr('text-anchor', 'middle').attr('font-size', 17).attr('font-weight', 700)
+    .attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 5).attr('paint-order', 'stroke');
+
+  en.on('click', (e, d) => {
+    e.stopPropagation();
+    S.selUnit = d.u.id; S.selArrow = S.selEvent = null;
+    refresh();
+  });
+  en.call(d3.drag().clickDistance(4)
+    .on('start', (e, d) => {
+      S.selUnit = d.u.id;
+      if(S.playing) togglePlay();
+    })
+    .on('drag', (e, d) => {
+      const ll = proj.invert(d3.pointer(e.sourceEvent, world.node()));
+      if(!ll) return;
+      setWaypoint(d.u, S.t, ll[1], ll[0]);
+      renderMap();
+    })
+    .on('end', () => refresh()));
+
+  const all = en.merge(sel);
+  const scale = S.scene.unitSize;
+  all.each(function(d){
+    const u = d.u;
+    const fac = facById(u.faction) || {color:'#888888', affil:'unknown', id:''};
+    const info = symbolFor(u, fac);
+    const g = d3.select(this);
+    const P = proj([d.p.lon, d.p.lat]);
+    g.attr('transform', `translate(${P[0].toFixed(1)},${P[1].toFixed(1)})`);
+    const sym = g.select('.sym');
+    if(sym.attr('data-k') !== info.key){ sym.attr('data-k', info.key).html(info.markup); }
+    sym.attr('transform', `scale(${scale})`);
+    const hh = info.h / 2 * scale;
+    g.select('.ring').attr('r', 30 * scale).attr('display', S.selUnit === u.id ? null : 'none');
+    const mark = ECH_MARK[u.echelon] || '';
+    g.select('.ech').attr('y', -hh - 6).text(mark).attr('display', mark ? null : 'none');
+    g.select('.lbl').attr('y', hh + 22).text(u.name).attr('display', S.scene.showLabels ? null : 'none');
+  });
+}
+
+/* ---------- interação com o mapa ---------- */
+function onMapClick(e){
+  if(e.defaultPrevented) return;
+  const [x, y] = d3.pointer(e, world.node());
+  const ll = proj.invert([x, y]);
+  if(!ll) return;
+  const [lon, lat] = ll;
+  switch(S.mode){
+    case 'territory': {
+      const f = countryAt(lon, lat);
+      if(!f) return;
+      if(S.paintLevel === 'region') paintRegion(f, lon, lat);
+      else setTerritory(isoOf(f), f.properties.name, S.selFaction, null);
+      break;
+    }
+    case 'arrow':
+      if(!S.pending){ S.pending = {lat, lon}; status('Agora clique no destino da seta.'); }
+      else {
+        const a = {id: uid(), from: S.pending, to: {lat, lon}, t0: r2(S.t), t1: r2(S.t + 6), kind: 'attack', faction: S.selFaction};
+        S.scene.arrows.push(a);
+        S.pending = null; S.selArrow = a.id; S.selUnit = S.selEvent = null;
+        status('Seta criada.');
+      }
+      break;
+    case 'corner': {
+      if(!S.scene.overlay){ status('Carregue uma imagem antes de calibrar.'); break; }
+      if(!S.pending){ S.pending = {lat, lon}; status('Agora clique no canto oposto da imagem.'); break; }
+      const a = S.pending, b = {lat, lon};
+      const nw = {lat: Math.max(a.lat, b.lat), lon: Math.min(a.lon, b.lon)};
+      const se = {lat: Math.min(a.lat, b.lat), lon: Math.max(a.lon, b.lon)};
+      S.scene.overlay.nw = nw;
+      S.scene.overlay.se = se;
+      const padX = (se.lon - nw.lon) * 0.05, padY = (nw.lat - se.lat) * 0.05;
+      S.scene.region = {lon0: nw.lon - padX, lat0: se.lat - padY, lon1: se.lon + padX, lat1: nw.lat + padY};
+      S.pending = null; S.mode = 'select';
+      fitRegion();
+      status('Imagem calibrada.');
+      break;
+    }
+    case 'event': {
+      const ev = {id: uid(), t: r2(S.t), lat, lon, kind: 'attack', text: '', dur: 3};
+      S.scene.events.push(ev);
+      S.selEvent = ev.id; S.selUnit = S.selArrow = null;
+      break;
+    }
+    case 'waypoint':
+      if(S.selUnit){ const u = unitById(S.selUnit); if(u) setWaypoint(u, S.t, lat, lon); }
+      break;
+    default: {
+      S.selUnit = S.selArrow = S.selEvent = null;
+      const f = countryAt(lon, lat);
+      if(f) status(`País: ${f.properties.name}`);
+    }
+  }
+  refresh();
+}
+svg.on('click', onMapClick);
+
+/* ---------- edição ---------- */
+function setMode(m){ S.mode = m; S.pending = null; refresh(); }
+function selectUnit(id){ S.selUnit = id; S.selArrow = S.selEvent = null; refresh(); }
+function selectArrow(id){ S.selArrow = id; S.selUnit = S.selEvent = null; refresh(); }
+function selectEvent(id){ S.selEvent = id; S.selUnit = S.selArrow = null; refresh(); }
+function selFac(id){ S.selFaction = id; refresh(); }
+
+function setWaypoint(u, t, lat, lon){
+  const i = u.path.findIndex(q => Math.abs(q.t - t) < 0.02);
+  if(i >= 0){ u.path[i].lat = lat; u.path[i].lon = lon; }
+  else u.path.push({t: r2(t), lat, lon});
+  sortPath(u);
+}
+function addUnit(){
+  const u = {id: uid(), name: 'Nova unidade', faction: S.selFaction, type: 'inf', echelon: 'bn', note: '', path: [{t: r2(S.t), lat: 54.7, lon: 25.3}]};
+  S.scene.units.push(u);
+  selectUnit(u.id);
+}
+function delUnit(id){ S.scene.units = S.scene.units.filter(u => u.id !== id); S.selUnit = null; refresh(); }
+function addWpNow(id){
+  const u = unitById(id); if(!u) return;
+  const p = posAt(u, S.t) || {lat: 54.7, lon: 25.3};
+  setWaypoint(u, S.t, p.lat, p.lon);
+  refresh();
+}
+function setWp(id, i, k, v){
+  const u = unitById(id); if(!u) return;
+  u.path[i][k] = parseFloat(v);
+  sortPath(u); refresh();
+}
+function delWp(id, i){
+  const u = unitById(id); if(!u) return;
+  u.path.splice(i, 1); refresh();
+}
+function setPath(obj, path, v){
+  const ks = path.split('.');
+  let o = obj;
+  for(let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+  const last = ks[ks.length - 1];
+  o[last] = typeof o[last] === 'number' ? parseFloat(v) : v;
+}
+function setU(id, k, v){ const u = unitById(id); if(u){ setPath(u, k, v); } refresh(); }
+function setFac(id, k, v){ const f = facById(id); if(f){ f[k] = v; } SYM.clear(); refresh(); }
+function addFac(){
+  const id = 'f' + uid();
+  S.scene.factions.push({id, name: 'Nova força', color: '#8e24aa', affil: 'unknown'});
+  S.selFaction = id; refresh();
+}
+function delFac(id){
+  if(S.scene.factions.length <= 1) return status('Mantenha pelo menos uma força.');
+  S.scene.factions = S.scene.factions.filter(f => f.id !== id);
+  if(S.selFaction === id) S.selFaction = S.scene.factions[0].id;
+  SYM.clear(); refresh();
+}
+function setArrow(id, k, v){ const a = S.scene.arrows.find(x => x.id === id); if(a) setPath(a, k, v); refresh(); }
+function delArrow(id){ S.scene.arrows = S.scene.arrows.filter(a => a.id !== id); S.selArrow = null; refresh(); }
+function setEvent(id, k, v){ const e = S.scene.events.find(x => x.id === id); if(e) setPath(e, k, v); refresh(); }
+function delEvent(id){ S.scene.events = S.scene.events.filter(e => e.id !== id); S.selEvent = null; refresh(); }
+function setTerritory(iso, name, faction, sub){
+  const t = r2(S.t);
+  S.scene.territories = S.scene.territories.filter(e => {
+    const same = sub ? e.sub === sub : (!e.sub && e.iso === iso);
+    return !(same && Math.abs(e.t - t) < 0.02);
+  });
+  S.scene.territories.push(sub ? {iso, name, t, faction, sub} : {iso, name, t, faction});
+  status(`${name}: ${facById(faction)?.name} a partir de ${fmtT(t)}.`);
+  refresh();
+}
+function setPaintLevel(v){ S.paintLevel = v; refresh(); }
+
+/* divisões internas (estados/províncias), carregadas sob demanda */
+/* divisões estaduais ainda não têm fonte com coordenadas reais; por enquanto, pinte o país inteiro */
+async function ensureAdmin1(iso){
+  S.admin1.set(iso, []);
+  status('Pintura por estado/província ainda não está disponível. Use "País inteiro".');
+  return [];
+}
+async function paintRegion(f, lon, lat){
+  const iso = isoOf(f);
+  const had = S.admin1.has(iso);
+  const feats = await ensureAdmin1(iso);
+  refresh();
+  if(!feats.length) return;
+  if(!had) return status(`Divisões de ${f.properties.name} carregadas. Clique num estado para pintar.`);
+  const st = feats.find(x => d3.geoContains(x, [lon, lat]));
+  if(!st) return status(`Clique dentro de uma divisão de ${f.properties.name}.`);
+  setTerritory(iso, `${st.properties.name} (${f.properties.name})`, S.selFaction, st.properties['hc-key']);
+}
+
+function drawSub(ctrl){
+  const feats = [...S.admin1.values()].flat();
+  const sel = gSub.selectAll('path').data(feats, d => d.properties['hc-key']);
+  sel.exit().remove();
+  const en = sel.enter().append('path').attr('vector-effect', 'non-scaling-stroke');
+  en.append('title');
+  en.merge(sel)
+    .attr('d', pathGen)
+    .attr('fill', d => { const c = ctrl.get('sub:' + d.properties['hc-key']); return c ? facColor(c.faction) : 'none'; })
+    .attr('fill-opacity', d => ctrl.has('sub:' + d.properties['hc-key']) ? 0.6 : 0)
+    .attr('stroke', '#5b5242').attr('stroke-width', 0.7)
+    .each(function(d){ d3.select(this).select('title').text(d.properties.name); });
+}
+
+/* nomes: países (e estados, com zoom) visíveis na tela */
+function renderLabels(){
+  gLabels.selectAll('*').remove();
+  if(S.scene.mapType !== 'country' || !landSel) return;
+  const tr = d3.zoomTransform(svg.node());
+  const add = (text, sx, sy, size, big) => gLabels.append('text')
+    .attr('x', sx).attr('y', sy).attr('text-anchor', 'middle')
+    .attr('font-size', big).attr('font-weight', 700)
+    .attr('fill', '#fff').attr('stroke', '#000').attr('stroke-width', 4).attr('paint-order', 'stroke')
+    .text(text);
+  const inView = (x, y) => x >= 0 && x <= W && y >= 0 && y <= H;
+  const items = [];
+  for(const f of S.countries){
+    const c = proj(d3.geoCentroid(f));
+    if(!c) continue;
+    const [sx, sy] = tr.apply(c);
+    const b = pathGen.bounds(f);
+    const size = (b[1][0] - b[0][0]) * tr.k;
+    if(!inView(sx, sy) || size < 26) continue;
+    items.push({text: f.properties.name, sx, sy, size, big: 16});
+  }
+  if(tr.k >= 2.5){
+    for(const feats of S.admin1.values()) for(const f of feats){
+      const c = proj(d3.geoCentroid(f));
+      if(!c) continue;
+      const [sx, sy] = tr.apply(c);
+      const b = pathGen.bounds(f);
+      const size = (b[1][0] - b[0][0]) * tr.k;
+      if(!inView(sx, sy) || size < 60) continue;
+      items.push({text: f.properties.name, sx, sy, size, big: 12});
+    }
+  }
+  items.sort((a, b) => b.size - a.size).slice(0, 90).forEach(it => add(it.text, it.sx, it.sy, it.size, it.big));
+}
+function delTerritory(idx){ S.scene.territories.splice(idx, 1); refresh(); }
+function setScene(k, v){
+  if(k === 'durationH'){ v = clamp(parseFloat(v) || 72, 1, 2000); $('#scrub').max = v; }
+  if(k.startsWith('region.')){ setPath(S.scene, k, v); fitRegion(); refresh(); return; }
+  if(k === 'unitSize'){ v = parseFloat(v); }
+  if(k === 'showLabels' || k === 'showTrails'){ S.scene[k] = !!v; }
+  else setPath(S.scene, k, v);
+  if(k === 'symbolStyle') SYM.clear();
+  refresh();
+}
+function loadOverlay(file){
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const rg = S.scene.region;
+    S.scene.overlay = {src: r.result, nw: {lat: rg.lat1, lon: rg.lon0}, se: {lat: rg.lat0, lon: rg.lon1}, opacity: 1};
+    S.mode = 'corner'; S.pending = null;
+    status('Imagem carregada. Clique nos dois cantos opostos para posicioná-la.');
+    refresh();
+  };
+  r.readAsDataURL(file);
+}
+function removeOverlay(){ S.scene.overlay = null; refresh(); }
+function setOv(path, v){ if(S.scene.overlay){ setPath(S.scene.overlay, path, v); refresh(); } }
+function clearTerritories(){ if(confirm('Limpar todo o controle territorial?')){ S.scene.territories = []; refresh(); } }
+
+/* ---------- painéis ---------- */
+function renderLeft(){
+  const sc = S.scene;
+  const sortedTerr = sc.territories.map((e, i) => ({...e, i})).sort((a, b) => b.t - a.t).slice(0, 40);
+  $('#left').innerHTML = `
+    <section>
+      <h3>Modo</h3>
+      <div class="grid2 modes">${Object.entries(MODES).map(([k, v]) => `<button class="btn ${S.mode === k ? 'on' : ''}" onclick="setMode('${k}')">${v}</button>`).join('')}</div>
+      <p class="mut small" style="margin:8px 0 0">${HINTS[S.mode]}</p>
+      ${S.mode === 'territory' ? `<div class="grid2" style="margin-top:8px">
+        <button class="btn ${S.paintLevel === 'country' ? 'on' : ''}" onclick="setPaintLevel('country')">País inteiro</button>
+        <button class="btn ${S.paintLevel === 'region' ? 'on' : ''}" onclick="setPaintLevel('region')">Estado / província</button>
+      </div>` : ''}
+    </section>
+    <section>
+      <h3>Forças</h3>
+      ${sc.factions.map(f => `
+        <div class="fac ${S.selFaction === f.id ? 'cur' : ''}" onclick="selFac('${f.id}')">
+          <input type="color" value="${f.color}" onclick="event.stopPropagation()" onchange="setFac('${f.id}','color',this.value)" title="Cor">
+          <input type="text" value="${esc(f.name)}" style="flex:1" onclick="event.stopPropagation()" onchange="setFac('${f.id}','name',this.value)">
+          <select onclick="event.stopPropagation()" onchange="setFac('${f.id}','affil',this.value)">
+            ${AFFIL.map(([k, v]) => `<option value="${k}" ${f.affil === k ? 'selected' : ''}>${v}</option>`).join('')}
+          </select>
+          <button class="btn small" onclick="event.stopPropagation();delFac('${f.id}')" title="Remover">×</button>
+        </div>`).join('')}
+      <button class="btn" onclick="addFac()">+ Força</button>
+    </section>
+    <section>
+      <h3>Unidades (${sc.units.length})</h3>
+      ${sc.units.map(u => `
+        <div class="item ${S.selUnit === u.id ? 'cur' : ''}" onclick="selectUnit('${u.id}')">
+          <span class="sw" style="background:${facColor(u.faction)}"></span>
+          <span>${esc(u.name)}</span>
+          <span class="tag">${UNIT_TYPES[u.type]?.[0] ?? ''}</span>
+        </div>`).join('') || '<p class="mut small">Nenhuma unidade.</p>'}
+      <button class="btn" onclick="addUnit()">+ Unidade</button>
+    </section>
+    <section>
+      <h3>Setas (${sc.arrows.length})</h3>
+      ${sc.arrows.map(a => `
+        <div class="item ${S.selArrow === a.id ? 'cur' : ''}" onclick="selectArrow('${a.id}')">
+          <span class="sw" style="background:${facColor(a.faction)}"></span>
+          <span>${a.kind === 'withdraw' ? 'Retirada' : 'Avanço'} · ${fmtT(a.t0)}–${fmtT(a.t1)}</span>
+        </div>`).join('') || '<p class="mut small">Nenhuma seta.</p>'}
+    </section>
+    <section>
+      <h3>Eventos (${sc.events.length})</h3>
+      ${sc.events.map(e => `
+        <div class="item ${S.selEvent === e.id ? 'cur' : ''}" onclick="selectEvent('${e.id}')">
+          <span>${e.kind === 'note' ? '📌' : '💥'} ${esc(e.text || '(sem texto)')}</span>
+          <span class="tag">${fmtT(e.t)}</span>
+        </div>`).join('') || '<p class="mut small">Nenhum evento.</p>'}
+    </section>
+    <section>
+      <h3>Controle territorial (${sc.territories.length})</h3>
+      ${sortedTerr.map(e => `
+        <div class="item">
+          <span class="sw" style="background:${facColor(e.faction)}"></span>
+          <span>${esc(e.name)} → ${esc(facById(e.faction)?.name || '?')} <span class="tag">${fmtT(e.t)}</span></span>
+          <button class="btn small x" onclick="delTerritory(${e.i})">×</button>
+        </div>`).join('') || '<p class="mut small">Nenhum país pintado.</p>'}
+      <button class="btn danger" onclick="clearTerritories()">Limpar território</button>
+    </section>`;
+}
+
+function renderRight(){
+  const sc = S.scene;
+  const u = unitById(S.selUnit);
+  const a = sc.arrows.find(x => x.id === S.selArrow);
+  const ev = sc.events.find(x => x.id === S.selEvent);
+  let html = '';
+
+  if(u){
+    html += `
+    <section>
+      <h3>Unidade</h3>
+      <label>Nome<input type="text" value="${esc(u.name)}" onchange="setU('${u.id}','name',this.value)"></label>
+      <label>Força<select onchange="setU('${u.id}','faction',this.value)">
+        ${sc.factions.map(f => `<option value="${f.id}" ${u.faction === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
+      <label>Tipo<select onchange="setU('${u.id}','type',this.value)">
+        ${Object.entries(UNIT_TYPES).map(([k, v]) => `<option value="${k}" ${u.type === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></label>
+      <label>Escalão<select onchange="setU('${u.id}','echelon',this.value)">
+        ${Object.entries(ECH).map(([k, v]) => `<option value="${k}" ${u.echelon === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label>Observação<input type="text" value="${esc(u.note)}" onchange="setU('${u.id}','note',this.value)"></label>
+      <h4>Trajeto · instante (h) · lat · lon</h4>
+      <table>
+        ${u.path.map((p, i) => `
+          <tr>
+            <td><input type="number" step="0.25" value="${p.t}" onchange="setWp('${u.id}',${i},'t',this.value)"></td>
+            <td><input type="number" step="0.0001" value="${p.lat}" onchange="setWp('${u.id}',${i},'lat',this.value)"></td>
+            <td><input type="number" step="0.0001" value="${p.lon}" onchange="setWp('${u.id}',${i},'lon',this.value)"></td>
+            <td><button class="btn small" onclick="delWp('${u.id}',${i})">×</button></td>
+          </tr>`).join('')}
+      </table>
+      <p class="tag" style="margin:6px 0">Sem pontos antes do primeiro instante, a unidade fica oculta.</p>
+      <button class="btn" onclick="addWpNow('${u.id}')">+ Ponto no instante atual</button>
+      <button class="btn danger" onclick="delUnit('${u.id}')">Excluir unidade</button>
+    </section>`;
+  }
+
+  if(a){
+    html += `
+    <section>
+      <h3>Seta</h3>
+      <div class="grid2">
+        <label>Início (h)<input type="number" step="0.25" value="${a.t0}" onchange="setArrow('${a.id}','t0',this.value)"></label>
+        <label>Fim (h)<input type="number" step="0.25" value="${a.t1}" onchange="setArrow('${a.id}','t1',this.value)"></label>
+        <label>Origem lat<input type="number" step="0.0001" value="${a.from.lat}" onchange="setArrow('${a.id}','from.lat',this.value)"></label>
+        <label>Origem lon<input type="number" step="0.0001" value="${a.from.lon}" onchange="setArrow('${a.id}','from.lon',this.value)"></label>
+        <label>Destino lat<input type="number" step="0.0001" value="${a.to.lat}" onchange="setArrow('${a.id}','to.lat',this.value)"></label>
+        <label>Destino lon<input type="number" step="0.0001" value="${a.to.lon}" onchange="setArrow('${a.id}','to.lon',this.value)"></label>
+      </div>
+      <label>Tipo<select onchange="setArrow('${a.id}','kind',this.value)">
+        <option value="attack" ${a.kind === 'attack' ? 'selected' : ''}>Avanço (sólida)</option>
+        <option value="withdraw" ${a.kind === 'withdraw' ? 'selected' : ''}>Retirada (tracejada)</option></select></label>
+      <label>Força<select onchange="setArrow('${a.id}','faction',this.value)">
+        ${sc.factions.map(f => `<option value="${f.id}" ${a.faction === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></label>
+      <button class="btn danger" onclick="delArrow('${a.id}')">Excluir seta</button>
+    </section>`;
+  }
+
+  if(ev){
+    html += `
+    <section>
+      <h3>Evento</h3>
+      <label>Texto<input type="text" value="${esc(ev.text)}" onchange="setEvent('${ev.id}','text',this.value)"></label>
+      <div class="grid2">
+        <label>Instante (h)<input type="number" step="0.25" value="${ev.t}" onchange="setEvent('${ev.id}','t',this.value)"></label>
+        <label>Duração (h)<input type="number" step="0.25" value="${ev.dur}" onchange="setEvent('${ev.id}','dur',this.value)"></label>
+        <label>Lat<input type="number" step="0.0001" value="${ev.lat}" onchange="setEvent('${ev.id}','lat',this.value)"></label>
+        <label>Lon<input type="number" step="0.0001" value="${ev.lon}" onchange="setEvent('${ev.id}','lon',this.value)"></label>
+      </div>
+      <label>Tipo<select onchange="setEvent('${ev.id}','kind',this.value)">
+        <option value="attack" ${ev.kind === 'attack' ? 'selected' : ''}>Explosão / combate</option>
+        <option value="note" ${ev.kind === 'note' ? 'selected' : ''}>Nota (pino)</option></select></label>
+      <button class="btn danger" onclick="delEvent('${ev.id}')">Excluir evento</button>
+    </section>`;
+  }
+
+  html += `
+    <section>
+      <details open>
+        <summary>Cena</summary>
+        <label>Início (data/hora de referência)<input type="datetime-local" value="${sc.startDate}" onchange="setScene('startDate',this.value)"></label>
+        <label>Duração da cena (horas)<input type="number" step="1" value="${sc.durationH}" onchange="setScene('durationH',this.value)"></label>
+        <label>Estilo de símbolo<select onchange="setScene('symbolStyle',this.value)">
+          <option value="nato" ${sc.symbolStyle === 'nato' ? 'selected' : ''}>OTAN (APP-6 / 2525)</option>
+          <option value="pact" ${sc.symbolStyle === 'pact' ? 'selected' : ''}>Pacto de Varsóvia</option>
+          <option value="hist" ${sc.symbolStyle === 'hist' ? 'selected' : ''}>Histórico (WWII)</option>
+          <option value="block" ${sc.symbolStyle === 'block' ? 'selected' : ''}>Blocos (micro, wargame)</option></select></label>
+        <label>Tamanho dos símbolos: ${sc.unitSize.toFixed(2)}×<input type="range" min="0.5" max="2.2" step="0.05" value="${sc.unitSize}" oninput="setScene('unitSize',this.value)"></label>
+        <label class="inline"><input type="checkbox" ${sc.showLabels ? 'checked' : ''} onchange="setScene('showLabels',this.checked)"> Mostrar nomes</label>
+        <label class="inline"><input type="checkbox" ${sc.showTrails ? 'checked' : ''} onchange="setScene('showTrails',this.checked)"> Mostrar rastros</label>
+        <h4>Área do mapa (lon/lat)</h4>
+        <div class="grid2">
+          <label>Oeste (lon)<input type="number" step="0.1" value="${sc.region.lon0}" onchange="setScene('region.lon0',this.value)"></label>
+          <label>Sul (lat)<input type="number" step="0.1" value="${sc.region.lat0}" onchange="setScene('region.lat0',this.value)"></label>
+          <label>Leste (lon)<input type="number" step="0.1" value="${sc.region.lon1}" onchange="setScene('region.lon1',this.value)"></label>
+          <label>Norte (lat)<input type="number" step="0.1" value="${sc.region.lat1}" onchange="setScene('region.lat1',this.value)"></label>
+        </div>
+        <h4>Mapa de imagem (micro)</h4>
+        ${sc.overlay ? `
+          <p class="tag" style="margin:4px 0">Clique nos dois cantos opostos da imagem para posicioná-la.</p>
+          <button class="btn" onclick="setMode('corner')">Calibrar cantos no mapa</button>
+          <label>Opacidade<input type="range" min="0" max="1" step="0.05" value="${sc.overlay.opacity ?? 1}" oninput="setOv('opacity',this.value)"></label>
+          ${sc.overlay.nw && sc.overlay.se ? `
+          <div class="grid2">
+            <label>Canto NW lat<input type="number" step="0.00001" value="${sc.overlay.nw.lat}" onchange="setOv('nw.lat',this.value)"></label>
+            <label>Canto NW lon<input type="number" step="0.00001" value="${sc.overlay.nw.lon}" onchange="setOv('nw.lon',this.value)"></label>
+            <label>Canto SE lat<input type="number" step="0.00001" value="${sc.overlay.se.lat}" onchange="setOv('se.lat',this.value)"></label>
+            <label>Canto SE lon<input type="number" step="0.00001" value="${sc.overlay.se.lon}" onchange="setOv('se.lon',this.value)"></label>
+          </div>` : ''}
+          <button class="btn danger" onclick="removeOverlay()">Remover imagem</button>`
+        : `<label class="btn" style="text-align:center">Carregar imagem do terreno
+            <input type="file" accept="image/*" hidden onchange="loadOverlay(this.files[0]); this.value=''"></label>`}
+        <button class="btn" onclick="fitRegion();refresh()">Ajustar mapa à área</button>
+        <button class="btn" onclick="resetZoom()">Resetar zoom</button>
+      </details>
+    </section>`;
+
+  $('#right').innerHTML = html;
+}
+
+function resetZoom(){ svg.call(zoom.transform, d3.zoomIdentity); }
+
+/* ---------- mapa de fundo: países, ruas (OpenStreetMap) ou livre ---------- */
+const lonToX = (lon, n) => clamp(Math.floor((lon + 180) / 360 * n), 0, n - 1);
+const latToY = (lat, n) => { const r = lat * Math.PI / 180; return clamp(Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n), 0, n - 1); };
+const xToLon = (x, n) => x / n * 360 - 180;
+const yToLat = (y, n) => { const m = Math.PI - 2 * Math.PI * y / n; return 180 / Math.PI * Math.atan(0.5 * (Math.exp(m) - Math.exp(-m))); };
+
+function tileList(){
+  const k = d3.zoomTransform(svg.node()).k;
+  let z = clamp(Math.round(Math.log2(2 * Math.PI * proj.scale() * k / 256)), 1, 18);
+  const b0 = S.scene.region;
+  const grow = Math.max(0, 1 / k - 1) * 0.6;
+  const b = {
+    lon0: b0.lon0 - (b0.lon1 - b0.lon0) * grow, lon1: b0.lon1 + (b0.lon1 - b0.lon0) * grow,
+    lat0: b0.lat0 - (b0.lat1 - b0.lat0) * grow, lat1: b0.lat1 + (b0.lat1 - b0.lat0) * grow,
+  };
+  let list = [];
+  for(;;){
+    list = [];
+    const n = 2 ** z;
+    const x0 = lonToX(b.lon0, n), x1 = lonToX(b.lon1, n), y0 = latToY(b.lat1, n), y1 = latToY(b.lat0, n);
+    for(let x = x0; x <= x1; x++) for(let y = y0; y <= y1; y++){
+      const A = proj([xToLon(x, n), yToLat(y, n)]), B = proj([xToLon(x + 1, n), yToLat(y + 1, n)]);
+      list.push({url: `https://tile.openstreetmap.org/${z}/${x}/${y}.png`, x: Math.min(A[0], B[0]), y: Math.min(A[1], B[1]), w: Math.abs(B[0] - A[0]), h: Math.abs(B[1] - A[1])});
+    }
+    if(list.length <= 120 || z <= 1) break;
+    z--;
+  }
+  return list;
+}
+function drawBase(){
+  const sc = S.scene;
+  const ov = sc.overlay;
+  const calibrated = !!(ov && ov.src && ov.nw && ov.se);
+  const isTiles = sc.mapType === 'tiles';
+  const isFree = sc.mapType === 'free';
+  bgRect.attr('fill', isFree ? '#e9e4d4' : SEA);
+  if(landSel) landSel.attr('display', (isTiles || isFree || calibrated) ? 'none' : null);
+  hudAttr.text(isTiles ? '© OpenStreetMap contributors' : '');
+  gBase.selectAll('*').remove();
+  if(!isTiles) return;
+  for(const t of tileList()){
+    gBase.append('image').attr('href', t.url)
+      .attr('x', t.x).attr('y', t.y).attr('width', t.w).attr('height', t.h)
+      .attr('preserveAspectRatio', 'none');
+  }
+}
+const tileCache = new Map();
+async function blobToDataURL(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  const blob = await r.blob();
+  return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); });
+}
+async function preloadTiles(){
+  if(S.scene.mapType !== 'tiles') return {ok: 0, total: 0};
+  const list = tileList();
+  let ok = 0;
+  for(const t of list){
+    if(!tileCache.has(t.url)){
+      try{ tileCache.set(t.url, await blobToDataURL(t.url)); }catch(_){}
+    }
+    if(tileCache.has(t.url)) ok++;
+  }
+  return {ok, total: list.length};
+}
+
+function drawOverlay(){
+  const ov = S.scene.overlay;
+  gOverlay.selectAll('*').remove();
+  const calibrated = !!(ov && ov.src && ov.nw && ov.se);
+  if(!calibrated) return;
+  const A = proj([ov.nw.lon, ov.nw.lat]), B = proj([ov.se.lon, ov.se.lat]);
+  if(!A || !B) return;
+  gOverlay.append('image')
+    .attr('href', ov.src)
+    .attr('x', Math.min(A[0], B[0])).attr('y', Math.min(A[1], B[1]))
+    .attr('width', Math.abs(B[0] - A[0])).attr('height', Math.abs(B[1] - A[1]))
+    .attr('preserveAspectRatio', 'none')
+    .attr('opacity', ov.opacity ?? 1);
+}
+
+function refresh(){
+  renderLeft();
+  renderRight();
+  renderMap();
+  drawBase();
+  drawOverlay();
+  syncTime();
+  saveSoon();
+}
+
+/* ---------- tempo ---------- */
+const dur = () => S.scene.durationH;
+function fmtT(t){
+  const d = Math.floor(t / 24) + 1, h = Math.floor(t % 24), m = Math.round((t % 1) * 60);
+  return `D${d} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+function clockText(){
+  let txt = fmtT(S.t);
+  if(S.scene.startDate){
+    const d = new Date(new Date(S.scene.startDate).getTime() + S.t * 3600000);
+    if(!isNaN(d)) txt = d.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}) + '  ·  ' + txt;
+  }
+  return txt;
+}
+function syncTime(){
+  $('#scrub').max = dur();
+  $('#scrub').value = S.t;
+  $('#clock').textContent = clockText();
+}
+function setT(v){
+  S.t = clamp(v, 0, dur());
+  renderMap();
+  syncTime();
+}
+function togglePlay(){
+  S.playing = !S.playing;
+  $('#play').textContent = S.playing ? '❚❚ Pausa' : '▶ Play';
+  if(S.playing && S.t >= dur()) setT(0);
+}
+function tick(ts){
+  if(S.playing){
+    const dt = Math.min(0.1, (ts - (S.lastTs || ts)) / 1000);
+    S.t += dt * parseFloat($('#speed').value);
+    if(S.t >= dur()){ S.t = dur(); togglePlay(); }
+    renderMap();
+    syncTime();
+  }
+  S.lastTs = ts;
+  requestAnimationFrame(tick);
+}
+
+window.addEventListener('keydown', e => {
+  if(e.target.matches('input,select,textarea')) return;
+  const step = e.shiftKey ? 0.25 : 1;
+  if(e.code === 'Space'){ e.preventDefault(); togglePlay(); }
+  else if(e.key === 'ArrowRight'){ setT(S.t + step); }
+  else if(e.key === 'ArrowLeft'){ setT(S.t - step); }
+});
+
+/* ---------- exportação ---------- */
+function download(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+const slug = () => (S.scene.title || 'cena').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cena';
+
+async function svgImage(){
+  const clone = $('#map').cloneNode(true);
+  clone.querySelectorAll('image').forEach(im => {
+    const h = im.getAttribute('href');
+    if(h && tileCache.has(h)) im.setAttribute('href', tileCache.get(h));
+  });
+  clone.setAttribute('width', W);
+  clone.setAttribute('height', H);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const str = new XMLSerializer().serializeToString(clone);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str);
+  await img.decode();
+  return img;
+}
+
+async function exportPNG(){
+  status('Gerando PNG...');
+  const img = await svgImage();
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  cv.getContext('2d').drawImage(img, 0, 0, W, H);
+  cv.toBlob(b => { download(b, slug() + '-t' + S.t.toFixed(2) + 'h.png'); status('PNG pronto.'); }, 'image/png');
+}
+
+async function exportVideo(){
+  if(!window.MediaRecorder){ return status('Este navegador não suporta gravação de vídeo.'); }
+  if(S.playing) togglePlay();
+  status('Baixando mapa de fundo para o vídeo...');
+  const tr = await preloadTiles();
+  if(tr.total && tr.ok < tr.total) status(`Aviso: ${tr.total - tr.ok} de ${tr.total} blocos do mapa não foram baixados.`);
+  const sec = clamp(parseFloat($('#vidSec').value) || 20, 3, 180);
+  const fps = 30, frames = Math.round(sec * fps);
+  const saved = S.t;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const stream = cv.captureStream(0);
+  const track = stream.getVideoTracks()[0];
+  const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+  const rec = new MediaRecorder(stream, {mimeType: mime, videoBitsPerSecond: 8000000});
+  const chunks = [];
+  rec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+  const done = new Promise(r => rec.onstop = r);
+  rec.start();
+  try{
+    for(let f = 0; f <= frames; f++){
+      S.t = S.scene.durationH * f / frames;
+      renderMap();
+      syncTime();
+      const img = await svgImage();
+      ctx.drawImage(img, 0, 0, W, H);
+      track.requestFrame();
+      status(`Gravando vídeo: quadro ${f + 1}/${frames + 1}`);
+      await new Promise(r => setTimeout(r, 1000 / fps));
+    }
+  } finally {
+    rec.stop();
+  }
+  await done;
+  download(new Blob(chunks, {type: 'video/webm'}), slug() + '.webm');
+  S.t = saved; renderMap(); syncTime();
+  status('Vídeo pronto (WebM). Para MP4, converta com ffmpeg.');
+}
+
+function exportJSON(){
+  download(new Blob([JSON.stringify(S.scene, null, 2)], {type: 'application/json'}), slug() + '.json');
+  status('JSON exportado.');
+}
+function importJSON(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const obj = JSON.parse(reader.result);
+      if(!Array.isArray(obj.units)) throw new Error('arquivo sem "units"');
+      S.scene = normalize(obj);
+      SYM.clear(); S.selUnit = S.selArrow = S.selEvent = null;
+      $('#title').value = S.scene.title;
+      fitRegion();
+      refresh();
+      status('Cena importada.');
+    }catch(err){ status('Erro ao importar: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- criação por IA: instruções + importação com validação ---------- */
+const AI_PROMPT = `Você vai montar uma cena para o "Mapa Tático". Responda SOMENTE com um JSON válido, sem texto antes ou depois, seguindo exatamente este formato:
+
+{
+  "title": "Nome da cena",
+  "startDate": "2026-03-01T06:00",
+  "durationH": 72,
+  "region": {"lon0": 19, "lat0": 53.4, "lon1": 28.2, "lat1": 57.6},
+  "symbolStyle": "nato",
+  "unitSize": 1,
+  "factions": [
+    {"id": "f1", "name": "Exército Verde", "color": "#2e7d32", "affil": "hostile"},
+    {"id": "f2", "name": "Exército Azul", "color": "#1565c0", "affil": "friend"}
+  ],
+  "territories": [
+    {"iso": "440", "name": "Lituânia", "t": 30, "faction": "f1"}
+  ],
+  "units": [
+    {"id": "u1", "name": "1ª Divisão Blindada", "faction": "f1", "type": "arm", "echelon": "div", "note": "", "path": [{"t": 0, "lat": 53.9, "lon": 27.0}, {"t": 18, "lat": 55.2, "lon": 25.5}]}
+  ],
+  "arrows": [
+    {"id": "a1", "from": {"lat": 54.0, "lon": 27.3}, "to": {"lat": 55.4, "lon": 24.6}, "t0": 18, "t1": 30, "kind": "attack", "faction": "f1"}
+  ],
+  "events": [
+    {"id": "e1", "t": 30, "lat": 55.7, "lon": 24.3, "kind": "attack", "text": "Travessia da ponte", "dur": 3}
+  ]
+}
+
+Regras:
+- "t" é o número de horas desde o início da cena.
+- "affil": friend (amigo), hostile (inimigo), neutral ou unknown.
+- "symbolStyle": nato (OTAN), pact (Pacto de Varsóvia), hist (histórico) ou block (blocos de wargame).
+- "type": inf (infantaria), mech (infantaria mecanizada), motor (infantaria motorizada), arm (blindados), cav (cavalaria), art (artilharia), eng (engenharia), fort (fortificação/fortaleza), hq (comando), civ (milícia/civis).
+- "echelon": co (companhia), bn (batalhão), reg (regimento), bde (brigada), div (divisão), corps (corpo) ou "" (nenhum).
+- "kind" das setas: attack (avanço) ou withdraw (retirada). Nos eventos: attack (explosão) ou note (nota com texto).
+- "iso" é o código de 2 letras do país: Lituânia LT, Letônia LV, Estônia EE, Polônia PL, Bielorrússia BY, Rússia RU, Ucrânia UA, Alemanha DE, França FR, Brasil BR, Argentina AR, Uruguai UY, Zimbábue ZW, Mongólia MN.
+- Em "territories", pinte o país inteiro (só "iso"). Não crie "sub" para estados: isso é feito no próprio mapa.
+- Use coordenadas decimais (lat, lon) reais e aproximadas dos lugares citados.
+- Dê um id único a cada força, unidade, seta e evento.
+- Um país muda de controle com uma nova entrada em "territories", com o "t" da mudança.
+- Cada unidade precisa de pelo menos um ponto em "path". Se ela se move, use vários pontos em ordem de tempo.
+- Não invente tropas além do que foi descrito. Se faltar informação, escolha o mais simples e explique o que assumiu no campo "note" da unidade.
+
+Descrição do que aconteceu:
+`;
+
+function copyAIPrompt(){
+  navigator.clipboard.writeText(AI_PROMPT)
+    .then(() => status('Instruções copiadas. Cole na IA junto com a sua descrição.'))
+    .catch(() => status('Não consegui copiar automaticamente. Selecione o texto e copie.'));
+}
+
+function validateScene(s){
+  const e = [];
+  if(!s || typeof s !== 'object' || Array.isArray(s)) return ['O conteúdo precisa ser um objeto { ... }.'];
+  const num = v => typeof v === 'number' && isFinite(v);
+  const facs = Array.isArray(s.factions) ? s.factions : [];
+  if(!facs.length) e.push('Falta a lista "factions" com pelo menos uma força.');
+  const ids = new Set();
+  facs.forEach((f, i) => {
+    if(!f.id || !f.name) e.push(`Força ${i + 1}: precisa de "id" e "name".`);
+    if(!/^#[0-9a-fA-F]{6}$/.test(f.color || '')) e.push(`Força "${f.name || i + 1}": "color" deve ser hex, por exemplo "#2e7d32".`);
+    if(!AFFIL.some(a => a[0] === f.affil)) e.push(`Força "${f.name || i + 1}": "affil" deve ser friend, hostile, neutral ou unknown.`);
+    if(f.id) ids.add(f.id);
+  });
+  const fOk = id => ids.has(id);
+  (s.units || []).forEach(u => {
+    const n = u.name || u.id || '(sem nome)';
+    if(!u.id || !u.name) e.push('Unidade sem "id" ou "name".');
+    if(!fOk(u.faction)) e.push(`Unidade "${n}": a força "${u.faction}" não existe em factions.`);
+    if(!UNIT_TYPES[u.type]) e.push(`Unidade "${n}": tipo "${u.type}" inválido (use inf, mech, motor, arm, cav, art, eng, fort, hq ou civ).`);
+    if(u.echelon !== undefined && !(u.echelon in ECH)) e.push(`Unidade "${n}": escalão "${u.echelon}" inválido.`);
+    if(!Array.isArray(u.path) || !u.path.length) e.push(`Unidade "${n}": "path" precisa de pelo menos um ponto.`);
+    else u.path.forEach((p, i) => { if(!num(p.t) || !num(p.lat) || !num(p.lon)) e.push(`Unidade "${n}", ponto ${i + 1}: t, lat e lon devem ser números.`); });
+  });
+  (s.arrows || []).forEach((a, i) => {
+    if(!a.from || !a.to || !num(a.from.lat) || !num(a.from.lon) || !num(a.to.lat) || !num(a.to.lon)) e.push(`Seta ${i + 1}: "from" e "to" precisam de lat e lon.`);
+    if(!num(a.t0) || !num(a.t1)) e.push(`Seta ${i + 1}: t0 e t1 devem ser números (horas).`);
+    if(!fOk(a.faction)) e.push(`Seta ${i + 1}: a força "${a.faction}" não existe.`);
+  });
+  (s.events || []).forEach((ev, i) => {
+    if(!num(ev.t) || !num(ev.lat) || !num(ev.lon)) e.push(`Evento ${i + 1}: t, lat e lon devem ser números.`);
+  });
+  (s.territories || []).forEach((t, i) => {
+    if(!/^[A-Za-z]{2}$/.test(t.iso || '')) e.push(`Território ${i + 1}: "iso" deve ser o código de 2 letras do país, por exemplo "LT" para a Lituânia.`);
+    if(!num(t.t)) e.push(`Território ${i + 1}: t deve ser número.`);
+    if(!fOk(t.faction)) e.push(`Território ${i + 1}: a força "${t.faction}" não existe.`);
+  });
+  if(s.region) ['lon0', 'lat0', 'lon1', 'lat1'].forEach(k => { if(!num(s.region[k])) e.push(`region.${k} deve ser número.`); });
+  return e;
+}
+
+function importFromBox(){
+  const err = $('#importErr');
+  const raw = $('#importBox').value.trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();
+  let obj;
+  try{ obj = JSON.parse(raw); }
+  catch(ex){ err.textContent = 'Não consegui ler o JSON: ' + ex.message + '\nDica: cole só o JSON, sem texto em volta.'; return; }
+  const errs = validateScene(obj);
+  if(errs.length){ err.textContent = errs.join('\n'); return; }
+  S.scene = normalize(obj);
+  SYM.clear();
+  S.selUnit = S.selArrow = S.selEvent = null;
+  $('#title').value = S.scene.title;
+  err.textContent = '';
+  fitRegion();
+  refresh();
+  $('#aiDlg').close();
+  status('Cena criada a partir do JSON.');
+}
+
+/* ---------- tela inicial: escolher a escala ---------- */
+function newScene(kind, region, title){
+  S.scene = normalize({title: title || 'Nova cena', mapType: kind, region: region || {lon0: -5, lat0: -5, lon1: 5, lat1: 5}});
+  SYM.clear();
+  S.selUnit = S.selArrow = S.selEvent = null; S.pending = null; S.mode = 'select';
+  $('#title').value = S.scene.title;
+  fitRegion();
+  refresh();
+  wizClose();
+}
+function wizOpen(){ $('#wiz').hidden = false; wizShowStep1(); }
+function wizClose(){ $('#wiz').hidden = true; }
+function wizShowStep1(){ $('#wizStep1').hidden = false; $('#wizStep2').innerHTML = ''; }
+function wizBack(){
+  if(S.scene && S.scene.units.length && !confirm('Criar um mapa novo? A cena atual fica salva só se você exportou o JSON.')) return;
+  wizShowStep1();
+}
+function wizPick(kind){
+  if(kind === 'ai'){ wizClose(); $('#aiDlg').showModal(); return; }
+  $('#wizStep1').hidden = true;
+  const box = $('#wizStep2');
+  const back = `<button class="btn" onclick="wizShowStep1()">Voltar</button>`;
+  if(kind === 'country'){
+    box.innerHTML = `
+      <h3>Qual país?</h3>
+      <p class="tag">Digite o nome e escolha da lista. Ex.: Lituânia, Brasil, Polônia.</p>
+      <input id="countryQ" list="countryList" placeholder="Nome do país" style="width:100%">
+      <datalist id="countryList">${S.countries.map(f => `<option value="${esc(f.properties?.name)}">`).join('')}</datalist>
+      <div class="row" style="margin-top:12px"><button class="btn on" onclick="openCountry()">Abrir mapa do país</button>${back}</div>`;
+  }
+  if(kind === 'city'){
+    box.innerHTML = `
+      <h3>Onde fica a ação?</h3>
+      <p class="tag">Digite um CEP (ex.: 88010-400) ou um endereço/cidade (ex.: Florianópolis, SC). Para CEP, o mapa mostra o quarteirão. Para cidade, mostra a cidade toda.</p>
+      <input id="cityQ" placeholder="CEP ou cidade/endereço" style="width:100%">
+      <div class="row" style="margin-top:12px"><button class="btn on" onclick="openCity()">Buscar e abrir</button>${back}</div>
+      <p class="tag" style="margin-top:10px">Usa ViaCEP e OpenStreetMap (Nominatim) para achar o lugar, e o mapa de ruas do OpenStreetMap.</p>`;
+    setTimeout(() => $('#cityQ')?.focus(), 0);
+  }
+  if(kind === 'free'){
+    box.innerHTML = `
+      <h3>Modo livre</h3>
+      <p class="tag">Sem localização real. Use para mapas inventados, ou sobre uma imagem sua (planta, mapa de papel escaneado, print).</p>
+      <div class="row" style="margin-top:8px">
+        <button class="btn on" onclick="newScene('free')">Começar em branco</button>
+        <label class="btn" style="text-align:center">Usar minha imagem
+          <input type="file" accept="image/*" hidden onchange="freeWithImage(this.files[0]); this.value=''"></label>
+        ${back}
+      </div>`;
+  }
+}
+function openCountry(){
+  const q = ($('#countryQ').value || '').trim().toLowerCase();
+  const f = S.countries.find(c => (c.properties?.name || '').toLowerCase() === q);
+  if(!f) return status('Escolha um país da lista.');
+  let [[w, s], [e, n]] = d3.geoBounds(f);
+  if(!(e > w) || (e - w) > 120 || (n - s) > 90){
+    /* país que cruza o meridiano 180 (ex.: EUA com Alasca): enquadra pelo centro e pelo tamanho */
+    const c = d3.geoCentroid(f);
+    const side = Math.sqrt(d3.geoArea(f)) * 180 / Math.PI;
+    const span = Math.min(Math.max(side * 1.6, 3), 80);
+    w = c[0] - span / 2; e = c[0] + span / 2;
+    s = c[1] - span / 2; n = c[1] + span / 2;
+  }
+  s = Math.max(-85, s); n = Math.min(85, n);
+  const padX = (e - w) * 0.03, padY = (n - s) * 0.03;
+  const region = {lon0: w - padX, lat0: s - padY, lon1: e + padX, lat1: n + padY};
+  newScene('country', region, f.properties.name);
+  status(`Mapa de ${f.properties.name} aberto.`);
+}
+async function openCity(){
+  const raw = ($('#cityQ').value || '').trim();
+  if(!raw) return status('Digite um CEP ou um endereço.');
+  status('Buscando o lugar...');
+  try{
+    const digits = raw.replace(/\D/g, '');
+    let query = raw, isCep = false, title = raw;
+    if(/^\d{5}-?\d{3}$/.test(raw)){
+      const r = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const j = await r.json();
+      if(j.erro) return status('CEP não encontrado.');
+      query = `${j.logradouro || ''} ${j.bairro || ''}, ${j.localidade}, ${j.uf}, Brasil`;
+      title = `${j.logradouro || j.localidade} · ${j.localidade}/${j.uf}`;
+      isCep = true;
+    }
+    const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, {headers: {'Accept-Language': 'pt-BR'}});
+    const res = await r2.json();
+    if(!res.length) return status('Não encontrei esse lugar. Tente uma cidade ou endereço mais simples.');
+    const hit = res[0];
+    const lat = +hit.lat, lon = +hit.lon;
+    let region;
+    if(isCep) region = {lon0: lon - 0.008, lat0: lat - 0.008, lon1: lon + 0.008, lat1: lat + 0.008};
+    else {
+      const [s, n, w, e] = hit.boundingbox.map(Number);
+      region = {lon0: w, lat0: s, lon1: e, lat1: n};
+    }
+    newScene('tiles', region, title);
+    status('Mapa aberto. Fonte: OpenStreetMap.');
+  }catch(err){
+    status('Não consegui buscar o lugar agora. Verifique a conexão e tente de novo.');
+  }
+}
+function freeWithImage(file){
+  if(!file) return;
+  newScene('free');
+  loadOverlay(file);
+}
+
+/* ---------- inicialização ---------- */
+async function init(){
+  const hadSaved = (() => { try{ return !!localStorage.getItem(KEY); }catch(_){ return false; } })();
+  wizOpen();
+  if(hadSaved) $('#wizContinue').innerHTML = '<button class="btn on" onclick="wizClose()">Continuar a última cena</button>';
+  S.scene = loadScene();
+  $('#title').value = S.scene.title;
+  status('Carregando mapa...');
+  try{
+    const geo = await d3.json('countries.json');
+    S.countries = geo.features.map(f => { f.properties['hc-a2'] = f.properties.iso2; return f; });
+  }catch(err){
+    status('Não consegui carregar o mapa (sem internet?)');
+    return;
+  }
+  buildLand();
+  fitRegion();
+  $('#speed').value = '2';
+  refresh();
+  status('');
+  requestAnimationFrame(tick);
+}
+init();
+</script>
+</body>
+</html>
