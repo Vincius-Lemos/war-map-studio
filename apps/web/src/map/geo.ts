@@ -31,11 +31,30 @@ export async function defaultLoadGeo(iso3?: string): Promise<unknown> {
 
 type FC = { features?: Array<{ type: string; properties?: Record<string, unknown> | null; geometry: unknown }> };
 
+/* Anel que cruza o antimeridiano (ex.: Rússia, Fiji): sem isto o deck.gl triangula a ponte
+   entre +180 e -180 como uma faixa horizontal que dá a volta no mundo. Desenrolar a longitude
+   (somar/subtrair 360 nos saltos) deixa o anel contínuo no plano; o d3 segue tratando como esférico. */
+function unwrapRing(ring: number[][]): number[][] {
+  const out: number[][] = [];
+  let off = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i]!;
+    if (i > 0) {
+      const d = p[0]! - ring[i - 1]![0]!;
+      if (d > 180) off -= 360;
+      else if (d < -180) off += 360;
+    }
+    out.push([p[0]! + off, p[1]!]);
+  }
+  return out;
+}
+
 /* Um anel invertido vira "o resto do mundo" para o d3: corrige a orientação. */
 function orient<P>(f: GeoFeature<P>): GeoFeature<P> {
   const g = f.geometry;
   const polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
   for (const p of polys) {
+    for (let i = 0; i < p.length; i++) p[i] = unwrapRing(p[i]!);
     if (geoArea({ type: 'Polygon', coordinates: p }) > 2 * Math.PI) {
       for (let i = 0; i < p.length; i++) p[i] = p[i]!.slice().reverse();
     }
@@ -114,16 +133,20 @@ export function boundsOf(f: GeoFeature<object>): Bounds {
   let b = boundsCache.get(f);
   if (!b) {
     const bb = geoBounds(f as never);
-    b = [[bb[0][0]!, bb[0][1]!], [bb[1][0]!, bb[1][1]!]];
+    let x1 = bb[1][0]!;
+    /* o d3 devolve bbox que cruza o antimeridiano com x1 < x0: estende x1 para o plano desenrolado */
+    if (x1 < bb[0][0]!) x1 += 360;
+    b = [[bb[0][0]!, bb[0][1]!], [x1, bb[1][1]!]];
     boundsCache.set(f, b);
   }
   return b;
 }
 
-/* Bbox rápido antes do teste exato (geoContains é o caro). */
+/* Bbox rápido antes do teste exato (geoContains é o caro). Considera as cópias de +-360. */
 export function containsLonLat(f: GeoFeature<object>, lon: number, lat: number): boolean {
   const [[x0, y0], [x1, y1]] = boundsOf(f);
   if (lat < y0 - 0.01 || lat > y1 + 0.01) return false;
-  if (x0 <= x1 ? (lon < x0 - 0.01 || lon > x1 + 0.01) : (lon < x0 && lon > x1)) return false;
+  const inX = (v: number) => v >= x0 - 0.01 && v <= x1 + 0.01;
+  if (!inX(lon) && !inX(lon + 360) && !inX(lon - 360)) return false;
   return geoContains(f as never, [lon, lat]);
 }

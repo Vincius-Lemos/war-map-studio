@@ -57,7 +57,55 @@ const RING: [number, number, number, number] = [255, 213, 79, 255];
 const EVENT_RED: [number, number, number, number] = [255, 59, 48, 255];
 const NOTE_YELLOW: [number, number, number, number] = [255, 213, 79, 255];
 const LABEL_PX = 15;
-const LABEL_MAX = 110;
+/* fonte sans-serif para todos os textos do mapa (o padrão do deck.gl é monoespaçada) */
+const LABEL_FONT = 'Inter, "Segoe UI", system-ui, Roboto, Arial, sans-serif';
+/* fundo "pílula" escuro e semitransparente atrás dos nomes de países */
+const LABEL_BG: [number, number, number, number] = [8, 12, 18, 205];
+const LABEL_PAD = 5;
+/* país com a maior dimensão do bbox abaixo disto (px) não recebe rótulo */
+const LABEL_MIN_DIM = 22;
+/* distância mínima entre rótulos (px) */
+const LABEL_GAP = 4;
+
+/* nomes longos encurtados (chave: nome como vem em countries.json) */
+const SHORT_NAMES: Record<string, string> = {
+  'United States of America': 'United States',
+  'Democratic Republic of the Congo': 'DR Congo',
+  'Republic of the Congo': 'Congo',
+  'Central African Republic': 'Central African Rep.',
+  'Dominican Republic': 'Dominican Rep.',
+  'Equatorial Guinea': 'Eq. Guinea',
+  'United Arab Emirates': 'UAE',
+  'Bosnia and Herzegovina': 'Bosnia-Herz.',
+  'Trinidad and Tobago': 'Trinidad & Tobago',
+  'Saint Vincent and the Grenadines': 'St. Vincent',
+  'Papua New Guinea': 'Papua N. Guinea',
+  'South Sudan': 'S. Sudan',
+  'North Macedonia': 'N. Macedonia',
+  'Solomon Islands': 'Solomon Is.',
+  'Marshall Islands': 'Marshall Is.',
+  'Falkland Islands': 'Falklands',
+};
+
+/* Quantos rótulos de países cabem pelo zoom: afastado, só os maiores. */
+function countryLabelCap(z: number): number {
+  return z < 2 ? 12 : z < 3 ? 22 : z < 4 ? 36 : z < 5 ? 60 : 110;
+}
+
+/* Nome em uma ou duas linhas: encurtado e, se ainda longo, quebrado no espaço mais próximo do meio. */
+function countryNameLines(name: string): string[] {
+  const s = SHORT_NAMES[name] ?? name;
+  if (s.length <= 13) return [s];
+  const words = s.split(' ');
+  if (words.length < 2) return [s];
+  let best = 1, bestDiff = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const left = words.slice(0, i).join(' ');
+    const diff = Math.abs(left.length - (s.length - left.length - 1));
+    if (diff < bestDiff) { bestDiff = diff; best = i; }
+  }
+  return [words.slice(0, best).join(' '), words.slice(best).join(' ')];
+}
 
 const dashExt = new PathStyleExtension({ dash: true });
 
@@ -73,7 +121,7 @@ interface UnitDatum {
   rgb: [number, number, number];
 }
 interface FlagItem { id: string; bounds: Bounds; canvas: HTMLCanvasElement; tex: string }
-interface CountryLabel { name: string; pos: [number, number]; size: number; fs: number }
+interface CountryLabel { text: string; pos: [number, number]; fs: number }
 interface EventDatum { e: MapEvent; k: number; lines: string }
 interface BoxT { x0: number; x1: number; y0: number; y1: number }
 
@@ -136,7 +184,6 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
   let selection: MapSelection | null = null;
   let frame = 0;
   let baseKey = '';
-  let viewVersion = 0;
   let regionVersion = 0;
 
   let countries: GeoFeature<CountryProps>[] = [];
@@ -146,7 +193,9 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
   /* polígonos separados (um Polygon por feature): dados estáveis para o deck.gl não retessellar */
   let countryParts: GeoFeature<CountryProps>[] = [];
   let regionPartsCache: { v: number; data: GeoFeature<RegionProps>[] } = { v: -1, data: [] };
-  let labelCache: { key: string; data: CountryLabel[] } = { key: '', data: [] };
+  /* rótulos dos países: recalculados só depois de mudar a câmera, o tamanho ou os dados (não a cada quadro) */
+  let labelCache: CountryLabel[] = [];
+  let labelsDirty = true;
 
   const clickCbs: Array<(e: MapClick) => void> = [];
   const dragCbs: Array<(e: UnitDragEvent) => void> = [];
@@ -170,7 +219,11 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
   }
 
   map.on('load', () => { applyBase(); schedule(); });
-  map.on('move', () => { viewVersion++; schedule(); });
+  map.on('move', () => { schedule(); });
+  /* rótulos: recalculados ao fim de cada movimento/zoom e ao redimensionar */
+  const invalidateLabels = () => { labelsDirty = true; };
+  map.on('moveend', invalidateLabels);
+  map.on('resize', invalidateLabels);
 
   /* ---- dados geográficos ---- */
   const countriesReady: Promise<void> = (async () => {
@@ -178,6 +231,7 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
     countries = normalizeCountries(raw);
     countryParts = polygonParts(countries);
     for (const f of countries) if (f.properties.iso2) countryByIso.set(f.properties.iso2, f);
+    labelsDirty = true;
     schedule();
   })();
   countriesReady.catch(() => { /* erro reportado por ready() */ });
@@ -339,23 +393,67 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
     return out;
   }
 
-  /* Rótulos dos países: só os que cabem na tela e têm tamanho mínimo (26 px), os maiores primeiro. */
-  function countryLabelData(): CountryLabel[] {
-    const W = container.clientWidth, H = container.clientHeight;
-    const out: CountryLabel[] = [];
+  /* Rótulos dos países para a projeção `m` (o mapa da tela ou o da exportação).
+     Ordem por área (maiores primeiro); só os que estão na tela, têm tamanho mínimo, não colidem
+     com rótulos já aceitos e cabem no limite do zoom. */
+  function countryLabelData(m: MLMap, W: number, H: number): CountryLabel[] {
+    const cands: { label: CountryLabel; box: BoxT; area: number }[] = [];
     for (const f of countries) {
       const b = boundsOf(f);
-      const a = map.project([b[0][0], b[0][1]]);
-      const c = map.project([b[1][0], b[1][1]]);
-      const size = Math.abs(c.x - a.x);
-      if (size < 26) continue;
+      const a = m.project([b[0][0], b[0][1]]);
+      const c = m.project([b[1][0], b[1][1]]);
+      const x0 = Math.min(a.x, c.x), x1 = Math.max(a.x, c.x);
+      const y0 = Math.min(a.y, c.y), y1 = Math.max(a.y, c.y);
+      const bw = x1 - x0, bh = y1 - y0;
+      if (Math.max(bw, bh) < LABEL_MIN_DIM) continue;
+      if (x1 < 0 || x0 > W || y1 < 0 || y0 > H) continue;
+      /* rótulo no centroide; se ele saiu da tela, no centro da parte visível do bbox (país grande) */
       const cen = geoCentroid(f as never) as [number, number];
-      const p = map.project(cen);
-      if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) continue;
-      out.push({ name: f.properties.name, pos: cen, size, fs: clamp(size / 9, 12, 20) });
+      let p = m.project(cen);
+      let pos: [number, number] = cen;
+      if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
+        const vx0 = Math.max(0, x0), vx1 = Math.min(W, x1), vy0 = Math.max(0, y0), vy1 = Math.min(H, y1);
+        if (![vx0, vx1, vy0, vy1].every(Number.isFinite)) continue; /* coordenada inválida: não desenha esse rótulo */
+        if (Math.max(vx1 - vx0, vy1 - vy0) < LABEL_MIN_DIM) continue;
+        p = { x: (vx0 + vx1) / 2, y: (vy0 + vy1) / 2 } as typeof p;
+        const ll = m.unproject([p.x, p.y]);
+        /* o ponto escolhido precisa estar dentro do país, senão o rótulo cai no mar ou em outro país */
+        if (!containsLonLat(f, ll.lng, ll.lat)) continue;
+        pos = [ll.lng, ll.lat];
+      }
+      const fs = clamp(bw / 11, 12, 16);
+      const lines = countryNameLines(f.properties.name);
+      const maxLen = Math.max(...lines.map(s => s.length));
+      const w = maxLen * fs * 0.58 + LABEL_PAD * 2;
+      const h = lines.length * fs * 1.2 + LABEL_PAD * 2;
+      cands.push({
+        label: { text: lines.join('\n'), pos, fs },
+        box: { x0: p.x - w / 2, x1: p.x + w / 2, y0: p.y - h / 2, y1: p.y + h / 2 },
+        area: bw * bh,
+      });
     }
-    out.sort((x, y) => y.size - x.size);
-    return out.slice(0, LABEL_MAX);
+    cands.sort((x, y) => y.area - x.area);
+    const cap = countryLabelCap(m.getZoom());
+    const placed: BoxT[] = [];
+    const out: CountryLabel[] = [];
+    for (const it of cands) {
+      if (out.length >= cap) break;
+      const b = it.box;
+      const hit = placed.some(q => b.x0 < q.x1 + LABEL_GAP && b.x1 + LABEL_GAP > q.x0 && b.y0 < q.y1 + LABEL_GAP && b.y1 + LABEL_GAP > q.y0);
+      if (hit) continue;
+      placed.push(b);
+      out.push(it.label);
+    }
+    return out;
+  }
+
+  /* rótulos da tela: recalculados só quando a câmera/tamanho mudou; a exportação calcula à parte */
+  function countryLabelsFor(): CountryLabel[] {
+    if (labelsDirty) {
+      labelCache = countryLabelData(map, container.clientWidth, container.clientHeight);
+      labelsDirty = false;
+    }
+    return labelCache;
   }
 
   /* ---- hit test ---- */
@@ -388,7 +486,8 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
   }
 
   /* ---- desenho da cena ---- */
-  function buildLayers(): Layer[] {
+  /* `m` é o mapa cuja projeção vale (a tela, ou o mapa de exportação em 1920x1080). */
+  function buildLayers(m: MLMap = map, cacheable = true): Layer[] {
     const sc = scene;
     if (!sc) return [];
     const ov = sc.overlay;
@@ -413,22 +512,28 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       layers.push(...flagLayers(regionFlagItems(subs, orgFlags, showAll), 'rf-'));
       layers.push(regionBorderLayer(regs));
 
-      /* rótulos dos países: recalculados só quando a vista muda */
-      const labelKey = viewVersion + '|' + countries.length;
-      if (labelCache.key !== labelKey) labelCache = { key: labelKey, data: countryLabelData() };
+      const labels = cacheable
+        ? countryLabelsFor()
+        : countryLabelData(m, m.getContainer().clientWidth, m.getContainer().clientHeight);
       layers.push(new TextLayer<CountryLabel>({
         id: 'country-labels',
-        data: labelCache.data,
+        data: labels,
         getPosition: d => d.pos,
-        getText: d => d.name,
+        getText: d => d.text,
         getSize: d => d.fs,
         sizeUnits: 'pixels',
         getColor: WHITE,
         getTextAnchor: 'middle',
         getAlignmentBaseline: 'center',
-        fontSettings: { sdf: true, fontWeight: 700 },
-        outlineWidth: 0.3,
+        fontFamily: LABEL_FONT,
+        fontSettings: { sdf: true, fontWeight: 600 },
+        characterSet: 'auto',
+        lineHeight: 1.15,
+        outlineWidth: 0.2,
         outlineColor: BLACK,
+        background: true,
+        getBackgroundColor: LABEL_BG,
+        backgroundPadding: [LABEL_PAD, 2, LABEL_PAD, 2],
         pickable: false,
       }));
     }
@@ -539,7 +644,9 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       getTextAnchor: 'middle',
       getAlignmentBaseline: 'bottom',
       getPixelOffset: d => [0, -(30 + (d.lines.split('\n').length - 1) * LABEL_PX * 1.2)],
-      fontSettings: { sdf: true, fontWeight: 700 },
+      fontFamily: LABEL_FONT,
+      fontSettings: { sdf: true, fontWeight: 600 },
+      characterSet: 'auto',
       outlineWidth: 0.3,
       outlineColor: BLACK,
       pickable: false,
@@ -593,7 +700,9 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       getTextAnchor: 'middle',
       getAlignmentBaseline: 'bottom',
       getPixelOffset: d => [0, -(d.h / 2 + 5)],
+      fontFamily: LABEL_FONT,
       fontSettings: { sdf: true, fontWeight: 800 },
+      characterSet: 'auto',
       outlineWidth: 0.3,
       outlineColor: BLACK,
       pickable: false,
@@ -602,7 +711,7 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
     /* nomes das unidades, sem colisão (a selecionada tem prioridade) */
     if (sc.showLabels) {
       const items = unitData.map(d => {
-        const P = map.project([d.lon, d.lat]);
+        const P = m.project([d.lon, d.lat]);
         const ly = d.h / 2 + 16;
         const w = d.u.name.length * LABEL_PX * 0.6 / 2;
         return {
@@ -633,8 +742,10 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
         getTextAnchor: 'middle',
         getAlignmentBaseline: 'center',
         getPixelOffset: d => [0, d.h / 2 + 22],
-        fontSettings: { sdf: true, fontWeight: 700 },
-        outlineWidth: 0.3,
+        fontFamily: LABEL_FONT,
+        fontSettings: { sdf: true, fontWeight: 600 },
+        characterSet: 'auto',
+        outlineWidth: 0.25,
         outlineColor: BLACK,
         pickable: false,
       }));
@@ -744,7 +855,7 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
     try {
       m.addControl(ov);
       await new Promise<void>(res => { if (m.loaded()) res(); else m.once('load', () => res()); });
-      ov.setProps({ layers: buildLayers() });
+      ov.setProps({ layers: buildLayers(m, false) });
       const idle = () => new Promise<void>(res => m.once('idle', () => res()));
       await idle();
       await new Promise(res => setTimeout(res, 600));
