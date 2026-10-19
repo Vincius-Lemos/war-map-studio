@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { Scene } from './scene.ts';
+import type { GridConfig, Scene } from './scene.ts';
 import { normalizeScene } from './normalize.ts';
-import { applyField, removeWaypoint, setSubTerritory, setTerritory, setWaypoint } from './ops.ts';
+import { applyField, placeUnit, removeWaypoint, setSubTerritory, setTerritory, setWaypoint } from './ops.ts';
 
 const scene = (): Scene =>
   normalizeScene({
@@ -78,4 +78,83 @@ test('applyField ordena o trajeto depois de mudar o horário de um ponto', () =>
   const r = applyField(s, { kind: 'wp', id: 'u1', index: 1, field: 't' }, '-1');
   assert.ok(r.ok);
   if (r.ok) assert.deepEqual(r.scene.units[0]?.path.map((p) => p.t), [-1, 0]);
+});
+
+/* ---------- colocação de unidades ---------- */
+
+const placeSpec = { type: 'arm' as const, echelon: 'bn' as const, factionId: 'f2', lat: 4.2, lon: 6.8, t: 3 };
+
+test('placeUnit cria a unidade no ponto, da força e no instante pedidos, sem alterar a cena de entrada', () => {
+  const s = scene();
+  const r = placeUnit(s, placeSpec);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  assert.equal(s.units.length, 1);
+  assert.equal(r.scene.units.length, 2);
+  const u = r.scene.units.find((x) => x.id === r.unitId);
+  assert.equal(u?.faction, 'f2');
+  assert.equal(u?.type, 'arm');
+  assert.equal(u?.echelon, 'bn');
+  assert.deepEqual(u?.path, [{ t: 3, lat: 4.2, lon: 6.8 }]);
+});
+
+test('placeUnit dá ids únicos a cada unidade colocada', () => {
+  let s = scene();
+  const ids = new Set<string>();
+  for (let i = 0; i < 200; i++) {
+    const r = placeUnit(s, placeSpec);
+    assert.ok(r.ok);
+    if (!r.ok) return;
+    ids.add(r.unitId);
+    s = r.scene;
+  }
+  assert.equal(ids.size, 200);
+  assert.equal(new Set(s.units.map((u) => u.id)).size, s.units.length);
+  assert.ok(!ids.has('u1'));
+});
+
+test('placeUnit rejeita força inexistente e não cria unidade', () => {
+  const s = scene();
+  const r = placeUnit(s, { ...placeSpec, factionId: 'nao-existe' });
+  assert.equal(r.ok, false);
+  assert.equal(s.units.length, 1);
+});
+
+test('placeUnit sugere nome no padrão "1º Bn Inf" e numera por força, tipo e escalão', () => {
+  const r1 = placeUnit(scene(), { ...placeSpec, type: 'inf', echelon: 'bn', factionId: 'f2' });
+  assert.ok(r1.ok);
+  if (!r1.ok) return;
+  assert.equal(r1.scene.units.at(-1)?.name, '1º Bn Inf');
+  const r2 = placeUnit(r1.scene, { ...placeSpec, type: 'inf', echelon: 'bn', factionId: 'f2' });
+  assert.ok(r2.ok);
+  if (r2.ok) assert.equal(r2.scene.units.at(-1)?.name, '2º Bn Inf');
+  const r3 = placeUnit(r1.scene, { ...placeSpec, type: 'inf', echelon: 'bn', factionId: 'f1', name: 'Minha' });
+  assert.ok(r3.ok);
+  if (r3.ok) assert.equal(r3.scene.units.at(-1)?.name, 'Minha');
+});
+
+const gridWith = (snap: boolean, snapStep: number): GridConfig => ({
+  lonLat: { enabled: false, step: 0 },
+  mgrs: { enabled: false },
+  custom: { enabled: false, step: 1, unit: 'deg', lat0: 0, lon0: 0 },
+  opacity: 0.5,
+  snap,
+  snapStep,
+});
+
+test('placeUnit encaixa no centro da célula mais próxima quando grid.snap está ligado', () => {
+  const gridOn = { ...scene(), grid: gridWith(true, 1) };
+  // células de 1 grau a partir de (0, 0): centros em x.5
+  const r = placeUnit(gridOn, { ...placeSpec, lat: 4.2, lon: 6.8 });
+  assert.ok(r.ok);
+  if (r.ok) assert.deepEqual(r.scene.units.at(-1)?.path[0], { t: 3, lat: 4.5, lon: 6.5 });
+});
+
+test('placeUnit não encaixa quando a grade está desligada ou ausente', () => {
+  const off = placeUnit({ ...scene(), grid: gridWith(false, 1) }, { ...placeSpec, lat: 4.2, lon: 6.8 });
+  assert.ok(off.ok);
+  if (off.ok) assert.deepEqual(off.scene.units.at(-1)?.path[0], { t: 3, lat: 4.2, lon: 6.8 });
+  const none = placeUnit(scene(), { ...placeSpec, lat: 4.2, lon: 6.8 });
+  assert.ok(none.ok);
+  if (none.ok) assert.deepEqual(none.scene.units.at(-1)?.path[0], { t: 3, lat: 4.2, lon: 6.8 });
 });

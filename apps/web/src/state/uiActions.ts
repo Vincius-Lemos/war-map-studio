@@ -33,7 +33,7 @@ export function createUiActions(api: Api): UiActions {
 
   return {
     setMode: (mode) => set({ mode, pending: null }),
-    select: (sel) => set({ sel, tab: sel ? 'sel' : get().tab }),
+    select: (sel) => set({ sel, selected: sel ? [sel] : [], tab: sel ? 'sel' : get().tab }),
     setTab: (tab) => set({ tab }),
     setFilter: (filter) => set({ filter }),
     setSelFaction: (selFaction) => set({ selFaction }),

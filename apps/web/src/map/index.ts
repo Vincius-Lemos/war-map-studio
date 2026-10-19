@@ -9,11 +9,13 @@ import { BitmapLayer, IconLayer, PathLayer, PolygonLayer, ScatterplotLayer, Text
 import { PathStyleExtension, type PathStyleExtensionProps } from '@deck.gl/extensions';
 import { geoCentroid } from 'd3-geo';
 import { controlAt, posAt, subControlAt } from '@map-draw/shared';
-import type { MapEvent, OrgFlag, Region, Scene, Territory, Unit } from '@map-draw/shared';
+import type { GridConfig, MapEvent, OrgFlag, Region, Scene, Territory, Unit } from '@map-draw/shared';
+import { normalizeGrid } from '@map-draw/shared';
 import { type Bounds, type CountryProps, type GeoFeature, type GeoLoader, type RegionProps, boundsOf, containsLonLat, defaultLoadGeo, mainPart, normalizeCountries, normalizeRegions, polygonParts } from './geo';
 import { FlagTextures, flagSrcFor, flagUrl } from './flags';
 import { IconCache, type IconDef, echelonMark } from './icons';
 import { arrowGeo, clamp, hexToRgb, trailPoints, wrapText, type ArrowGeo } from './motion';
+import { gridDataFor, gridLayers, type GridView } from './grid';
 
 /* ---------- contrato público ---------- */
 
@@ -38,6 +40,10 @@ export interface MapApi {
   /* Além do contrato: a interface informa a seleção (anel) e pode pedir as regiões de um país. */
   setSelection(sel: MapSelection | null): void;
   loadRegions(iso: string): Promise<void>;
+  /* Projeção geográfico -> tela (pixels do contêiner do mapa); null se o ponto for inválido. */
+  toScreen(lat: number, lon: number): { x: number; y: number } | null;
+  /* Troca a grade desenhada e redesenha. Vale até a cena receber outra grade (edição ou render com outra cena). */
+  setGrid(g: GridConfig): void;
 }
 
 export interface MapOptions {
@@ -135,6 +141,29 @@ function keyOfMap(m: Map<string, Territory>): string {
   return s;
 }
 
+/* ---------- grade: vista e chave de cache ---------- */
+
+function gridViewOf(m: MLMap): GridView {
+  const b = m.getBounds();
+  const c = m.getContainer();
+  return {
+    west: Math.max(-180, b.getWest()),
+    east: Math.min(180, b.getEast()),
+    south: Math.max(-85, b.getSouth()),
+    north: Math.min(85, b.getNorth()),
+    width: c.clientWidth,
+    height: c.clientHeight,
+    project: (lon, lat) => m.project([lon, lat]),
+  };
+}
+
+/* Muda só com zoom, centro, tamanho da tela ou a configuração da grade. */
+function gridKeyOf(m: MLMap, cfg: GridConfig): string {
+  const c = m.getCenter();
+  const box = m.getContainer();
+  return `${m.getZoom().toFixed(5)}|${c.lng.toFixed(6)}|${c.lat.toFixed(6)}|${box.clientWidth}x${box.clientHeight}|${JSON.stringify(cfg)}`;
+}
+
 /* ---------- criação ---------- */
 
 function baseStyle(): StyleSpecification {
@@ -180,6 +209,9 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
 
   let disposed = false;
   let scene: Scene | null = null;
+  /* grade trocada por setGrid; some quando a cena recebe outra grade (ver render) */
+  let gridOverride: GridConfig | null = null;
+  let sceneGridSeen: GridConfig | undefined;
   let T = 0;
   let selection: MapSelection | null = null;
   let frame = 0;
@@ -538,6 +570,13 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       }));
     }
 
+    /* grades de referência: por cima dos países, por baixo de rastros e unidades. Recalculadas só quando a vista muda. */
+    const gcfg = gridOverride ?? sc.grid;
+    if (gcfg && (gcfg.lonLat.enabled || gcfg.custom.enabled || gcfg.mgrs.enabled)) {
+      const key = cacheable ? gridKeyOf(m, gcfg) : undefined;
+      layers.push(...gridLayers(gridDataFor(gcfg, gridViewOf(m), key)));
+    }
+
     /* rastros */
     if (sc.showTrails) {
       const trails = sc.units
@@ -885,6 +924,10 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       if (disposed) return;
       scene = sc;
       T = t;
+      if (sc.grid !== sceneGridSeen) {
+        sceneGridSeen = sc.grid;
+        gridOverride = null;
+      }
       for (const e of sc.territories) {
         if (e.sub && !regionsByIso.has(e.iso)) void loadRegions(e.iso);
       }
@@ -923,6 +966,16 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       if (!disposed) commit();
     },
     loadRegions,
+    toScreen(lat, lon) {
+      if (disposed || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+      const p = map.project([lon, lat]);
+      return Number.isFinite(p.x) && Number.isFinite(p.y) ? { x: p.x, y: p.y } : null;
+    },
+    setGrid(g) {
+      if (disposed) return;
+      gridOverride = normalizeGrid(g);
+      commit();
+    },
   };
   return api;
 }

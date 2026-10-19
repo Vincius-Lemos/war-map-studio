@@ -6,3 +6,8 @@ export * from './normalize.ts';
 export * from './ops.ts';
 export * from './validate.ts';
 export * from './importJson.ts';
+export * from './batch.ts';
+export * from './align.ts';
+export * from './geo-measure.ts';
+export * from './layers.ts';
+export * from './grid.ts';

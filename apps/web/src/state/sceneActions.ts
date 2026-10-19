@@ -13,9 +13,22 @@ import {
   type MapType,
   type Region,
   type Scene,
+  type Echelon,
+  type UnitType,
+  placeUnit,
 } from '@map-draw/shared';
 import type { Point } from './types.ts';
 import type { Api } from './store.ts';
+import { withHistoryKey } from './historyActions.ts';
+import { deleteSelectionIn } from './editActions.ts';
+
+/* Unidade a colocar: tipo, escalão e ponto (a força é a selecionada e o instante é o da linha do tempo). */
+export interface NewUnitSpec {
+  type: UnitType;
+  echelon: Echelon;
+  lat: number;
+  lon: number;
+}
 
 export interface SceneActions {
   replaceScene(scene: Scene): void;
@@ -23,7 +36,7 @@ export interface SceneActions {
   setTitle(title: string): void;
   editField(target: FieldTarget, value: string | boolean): boolean;
   moveUnitTo(unitId: string, lat: number, lon: number): void;
-  addUnit(): void;
+  addUnit(spec: NewUnitSpec): boolean;
   addWaypointNow(unitId: string): void;
   deleteWaypoint(unitId: string, index: number): void;
   deleteUnit(id: string): void;
@@ -77,7 +90,7 @@ export function createSceneActions(api: Api): SceneActions {
 
     setTitle(title) {
       const clean = title.trim() || 'Sem título';
-      set({ scene: { ...get().scene, title: clean } });
+      withHistoryKey('title', () => set({ scene: { ...get().scene, title: clean } }));
     },
 
     editField(target, value) {
@@ -86,30 +99,28 @@ export function createSceneActions(api: Api): SceneActions {
         get().toast(res.error, 'warn');
         return false;
       }
-      set({ scene: res.scene });
+      /* Digitar num campo grava várias vezes; a chave junta essas gravações num só desfazer. */
+      withHistoryKey(`field:${JSON.stringify(target)}`, () => set({ scene: res.scene }));
       if (target.kind === 'scene' && target.field.startsWith('region.')) get().requestFit();
       return true;
     },
 
     moveUnitTo(unitId, lat, lon) {
       const s = get();
-      set({ scene: setWaypoint(s.scene, unitId, s.t, lat, lon) });
+      /* Arrastar grava um movimento por quadro: a chave da unidade junta todos num só desfazer. */
+      withHistoryKey(`move:${unitId}`, () => set({ scene: setWaypoint(s.scene, unitId, s.t, lat, lon) }));
     },
 
-    addUnit() {
+    addUnit(spec) {
       const s = get();
-      const id = uid();
-      const unit = {
-        id,
-        name: 'Nova unidade',
-        faction: s.selFaction,
-        type: 'inf' as const,
-        echelon: 'bn' as const,
-        note: '',
-        path: [{ t: r2(s.t), lat: DEFAULT_POINT.lat, lon: DEFAULT_POINT.lon }],
-      };
-      set({ scene: { ...s.scene, units: [...s.scene.units, unit] } });
-      get().select({ kind: 'unit', id });
+      const res = placeUnit(s.scene, { ...spec, factionId: s.selFaction, t: s.t });
+      if (!res.ok) {
+        s.toast(res.error, 'warn');
+        return false;
+      }
+      set({ scene: res.scene });
+      get().select({ kind: 'unit', id: res.unitId });
+      return true;
     },
 
     addWaypointNow(unitId) {
@@ -166,12 +177,12 @@ export function createSceneActions(api: Api): SceneActions {
       get().select(null);
     },
 
+    /* Apaga todos os objetos selecionados (unidades, setas e eventos) numa só alteração. */
     deleteSelected() {
-      const sel = get().sel;
-      if (!sel) return;
-      if (sel.kind === 'unit') get().deleteUnit(sel.id);
-      else if (sel.kind === 'arrow') get().deleteArrow(sel.id);
-      else if (sel.kind === 'event') get().deleteEvent(sel.id);
+      const s = get();
+      const scene = deleteSelectionIn(s.scene, s.selected);
+      if (scene.units.length === s.scene.units.length && scene.arrows.length === s.scene.arrows.length && scene.events.length === s.scene.events.length) return;
+      set({ scene, sel: null, selected: [] });
     },
 
     addFaction() {

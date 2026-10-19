@@ -1,4 +1,4 @@
-import { histYearFor, MAP_TYPE_LABELS, STYLE_OPTIONS, type FieldTarget } from '@map-draw/shared';
+import { histYearFor, MAP_TYPE_LABELS, normalizeGrid, STYLE_OPTIONS, type FieldTarget, type GridConfig } from '@map-draw/shared';
 import { useStore } from '../../state/store.ts';
 import { getMapHandle } from '../../app/mapRegistry.ts';
 import { CommitInput } from '../fields/CommitInput.tsx';
@@ -6,6 +6,188 @@ import { OverlaySection } from './OverlaySection.tsx';
 
 type SceneField = Extract<FieldTarget, { kind: 'scene' }>['field'];
 const scn = (field: SceneField) => ({ kind: 'scene' as const, field });
+
+const LONLAT_STEPS = [10, 5, 1, 0.5, 0.1];
+const num = (text: string): number | null => {
+  const n = Number.parseFloat(text.replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+};
+
+/* Grades de referência: liga/desliga cada uma, passos, origem, opacidade e encaixe.
+   Grava a grade direto na cena (normalizada), e o mapa redesenha pela assinatura da store. */
+function GridSection() {
+  const grid = normalizeGrid(useStore((s) => s.scene.grid));
+  const update = (fn: (g: GridConfig) => GridConfig) => {
+    const cur = useStore.getState().scene;
+    useStore.setState({ scene: { ...cur, grid: normalizeGrid(fn(normalizeGrid(cur.grid))) } });
+  };
+  const pct = Math.round(grid.opacity * 100);
+
+  return (
+    <>
+      <div className="h">Grades de referência</div>
+
+      <label className="field inline">
+        <input
+          type="checkbox"
+          checked={grid.lonLat.enabled}
+          onChange={(e) => update((g) => ({ ...g, lonLat: { ...g.lonLat, enabled: e.target.checked } }))}
+        />
+        <span>Graticule (latitude e longitude)</span>
+      </label>
+      {grid.lonLat.enabled && (
+        <label className="field">
+          <span>Passo da graticule</span>
+          <select
+            value={grid.lonLat.step}
+            onChange={(e) => update((g) => ({ ...g, lonLat: { ...g.lonLat, step: Number(e.target.value) } }))}
+          >
+            <option value={0}>Automático (pelo zoom)</option>
+            {LONLAT_STEPS.map((s) => (
+              <option key={s} value={s}>
+                {String(s).replace('.', ',')}°
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      <label className="field inline">
+        <input
+          type="checkbox"
+          checked={grid.mgrs.enabled}
+          onChange={(e) => update((g) => ({ ...g, mgrs: { enabled: e.target.checked } }))}
+        />
+        <span>Grade militar (aproximada)</span>
+      </label>
+      <div className="muted small" style={{ margin: '-4px 0 6px' }}>
+        Aproximação: quadrados UTM de 100 km por zona, com 10 km ao aproximar. Não é a norma MGRS exata. Aparece com a área
+        até cerca de 1.500 km de largura.
+      </div>
+
+      <label className="field inline">
+        <input
+          type="checkbox"
+          checked={grid.custom.enabled}
+          onChange={(e) => {
+            /* ao ligar pela primeira vez (origem em 0,0), a origem vai para o canto sudoeste da área do mapa */
+            const r = useStore.getState().scene.region;
+            update((g) => {
+              const fresh = g.custom.lat0 === 0 && g.custom.lon0 === 0;
+              return {
+                ...g,
+                custom: {
+                  ...g.custom,
+                  enabled: e.target.checked,
+                  lat0: fresh ? r.lat0 : g.custom.lat0,
+                  lon0: fresh ? r.lon0 : g.custom.lon0,
+                },
+              };
+            });
+          }}
+        />
+        <span>Grade personalizada</span>
+      </label>
+      {grid.custom.enabled && (
+        <>
+          <div className="grid2">
+            <label className="field">
+              <span>Passo</span>
+              <CommitInput
+                type="number"
+                min={0.001}
+                step="any"
+                value={grid.custom.step}
+                onCommit={(v) => {
+                  const n = num(v);
+                  if (n !== null && n > 0) update((g) => ({ ...g, custom: { ...g.custom, step: n } }));
+                }}
+              />
+            </label>
+            <label className="field">
+              <span>Unidade</span>
+              <select
+                value={grid.custom.unit}
+                onChange={(e) => update((g) => ({ ...g, custom: { ...g.custom, unit: e.target.value === 'deg' ? 'deg' : 'km' } }))}
+              >
+                <option value="km">quilômetros</option>
+                <option value="deg">graus</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Origem: lat</span>
+              <CommitInput
+                type="number"
+                min={-90}
+                max={90}
+                step="any"
+                value={grid.custom.lat0}
+                onCommit={(v) => {
+                  const n = num(v);
+                  if (n !== null) update((g) => ({ ...g, custom: { ...g.custom, lat0: n } }));
+                }}
+              />
+            </label>
+            <label className="field">
+              <span>Origem: lon</span>
+              <CommitInput
+                type="number"
+                min={-180}
+                max={180}
+                step="any"
+                value={grid.custom.lon0}
+                onCommit={(v) => {
+                  const n = num(v);
+                  if (n !== null) update((g) => ({ ...g, custom: { ...g.custom, lon0: n } }));
+                }}
+              />
+            </label>
+          </div>
+          <div className="muted small" style={{ margin: '-4px 0 6px' }}>
+            Em quilômetros, a grade é plana a partir da origem (aproximada para áreas grandes).
+          </div>
+        </>
+      )}
+
+      <label className="field">
+        <span>Opacidade das grades: {pct}%</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={grid.opacity}
+          onChange={(e) => update((g) => ({ ...g, opacity: Number(e.target.value) }))}
+        />
+      </label>
+
+      <label className="field inline">
+        <input type="checkbox" checked={grid.snap} onChange={(e) => update((g) => ({ ...g, snap: e.target.checked }))} />
+        <span>Encaixar unidades na grade</span>
+      </label>
+      {grid.snap && (
+        <>
+          <label className="field">
+            <span>Tamanho da célula de encaixe (graus)</span>
+            <CommitInput
+              type="number"
+              min={0.0001}
+              step="any"
+              value={grid.snapStep}
+              onCommit={(v) => {
+                const n = num(v);
+                if (n !== null && n > 0) update((g) => ({ ...g, snapStep: n }));
+              }}
+            />
+          </label>
+          <div className="muted small" style={{ margin: '-4px 0 6px' }}>
+            Unidades colocadas no mapa vão para o centro da célula.
+          </div>
+        </>
+      )}
+    </>
+  );
+}
 
 /* Aba Cena: data, ano, duração, estilo, nomes, rastros, bandeiras, área do mapa e imagem própria. */
 export function SceneForm() {
@@ -122,6 +304,8 @@ export function SceneForm() {
           Resetar zoom
         </button>
       </div>
+
+      <GridSection />
 
       <OverlaySection />
 

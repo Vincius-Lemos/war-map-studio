@@ -3,10 +3,12 @@ import { normalizeScene, type Scene } from '@map-draw/shared';
 import type { UiState } from './types.ts';
 import { createUiActions, type UiActions } from './uiActions.ts';
 import { createSceneActions, type SceneActions } from './sceneActions.ts';
+import { createEditActions, type EditActions } from './editActions.ts';
+import { createHistoryActions, type HistoryActions } from './historyActions.ts';
 import { hasSavedScene, readSavedScene } from './persist.ts';
 import { DEMO_SCENE } from '../app/demo.ts';
 
-export type Store = UiState & UiActions & SceneActions;
+export type Store = UiState & UiActions & SceneActions & EditActions & HistoryActions;
 export type Api = StoreApi<Store>;
 
 /* Cena inicial: a última salva no navegador, ou o exemplo. */
@@ -28,6 +30,11 @@ export const useStore = create<Store>()((_set, _get, api) => {
     speed: 2,
     mode: 'select',
     sel: null,
+    selected: [],
+    clip: null,
+    pasteCount: 0,
+    canUndo: false,
+    canRedo: false,
     pending: null,
     tab: 'sel',
     filter: '',
@@ -48,5 +55,7 @@ export const useStore = create<Store>()((_set, _get, api) => {
     ...initial,
     ...createUiActions(api),
     ...createSceneActions(api),
+    ...createEditActions(api),
+    ...createHistoryActions(api),
   };
 });

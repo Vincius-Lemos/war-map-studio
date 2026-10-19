@@ -1,4 +1,4 @@
-import type { Scene, Territory } from './scene.ts';
+import type { Echelon, Scene, Territory, UnitType } from './scene.ts';
 import { sortPath } from './normalize.ts';
 
 /* Operações puras sobre a cena: devolvem uma cena nova, nunca alteram a entrada. */
@@ -186,4 +186,80 @@ export function applyField(scene: Scene, target: FieldTarget, value: string | bo
 
 function clampYear(y: number): number | null {
   return Number.isFinite(y) ? y : null;
+}
+
+/* ---------- colocação de unidades ---------- */
+
+export const UNIT_SHORT: Record<UnitType, string> = {
+  inf: 'Inf', mech: 'Mec', motor: 'Mot', arm: 'Bld', cav: 'Cav',
+  art: 'Art', eng: 'Eng', fort: 'Fort', hq: 'QG', civ: 'Civ',
+};
+
+export const ECHELON_SHORT: Record<Echelon, string> = {
+  '': '', co: 'Cia', bn: 'Bn', reg: 'Rgt', bde: 'Bde', div: 'Div', corps: 'C Ex',
+};
+
+export interface UnitSpec {
+  type: UnitType;
+  echelon: Echelon;
+  factionId: string;
+  lat: number;
+  lon: number;
+  t: number;
+  name?: string;
+}
+
+export type PlaceResult = { ok: true; scene: Scene; unitId: string } | { ok: false; error: string };
+
+/* Encaixe (scene.grid.snap ligado): vai para o centro da célula de lado snapStep graus em que o ponto cai.
+   As células começam em (0, 0), como as linhas da graticule. Sem encaixe, devolve o ponto como veio. */
+export function snapToGrid(scene: Scene, lat: number, lon: number): { lat: number; lon: number } {
+  const g = scene.grid;
+  if (!g?.snap || !(g.snapStep > 0)) return { lat, lon };
+  const step = g.snapStep;
+  const center = (v: number) => (Math.floor(v / step) + 0.5) * step;
+  return { lat: r6(center(lat)), lon: r6(center(lon)) };
+}
+
+const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+
+/* Nome sugerido no padrão da casa: "1º Bn Inf", "2º Bn Inf"... numerado entre unidades da mesma força, tipo e escalão. */
+export function suggestUnitName(scene: Scene, p: { type: UnitType; echelon: Echelon; factionId: string }): string {
+  const same = scene.units.filter((u) => u.faction === p.factionId && u.type === p.type && u.echelon === p.echelon).length;
+  const n = same + 1;
+  const ech = ECHELON_SHORT[p.echelon];
+  return [`${n}º`, ech, UNIT_SHORT[p.type]].filter(Boolean).join(' ');
+}
+
+function newUnitId(scene: Scene): string {
+  const used = new Set(scene.units.map((u) => u.id));
+  let id: string;
+  do {
+    id = 'u' + Math.random().toString(36).slice(2, 9);
+  } while (used.has(id));
+  return id;
+}
+
+/* Coloca uma unidade nova no ponto dado, da força indicada, no instante t, com um ponto no trajeto.
+   Com a grade ligada, o ponto vai para o centro da célula. Não altera a cena de entrada. */
+export function placeUnit(scene: Scene, spec: UnitSpec): PlaceResult {
+  if (!scene.factions.some((f) => f.id === spec.factionId)) {
+    return { ok: false, error: 'Essa força não existe mais. Escolha outra na lista de forças.' };
+  }
+  if (![spec.lat, spec.lon, spec.t].every((v) => Number.isFinite(v))) {
+    return { ok: false, error: 'Posição ou horário inválido para colocar a unidade.' };
+  }
+  const p = snapToGrid(scene, spec.lat, spec.lon);
+  const next = copy(scene);
+  const unitId = newUnitId(scene);
+  next.units.push({
+    id: unitId,
+    name: spec.name?.trim() || suggestUnitName(scene, spec),
+    faction: spec.factionId,
+    type: spec.type,
+    echelon: spec.echelon,
+    note: '',
+    path: [{ t: r2(spec.t), lat: p.lat, lon: p.lon }],
+  });
+  return { ok: true, scene: next, unitId };
 }

@@ -1,4 +1,5 @@
 import type { Faction, Scene, Territory, Unit } from './scene.ts';
+import { normalizeGrid } from './grid.ts';
 
 export function defaultFactions(): Faction[] {
   return [
@@ -51,5 +52,6 @@ export function normalizeScene(input: Partial<Scene>): Scene {
     territories,
     orgFlags: input.orgFlags ?? [],
     overlay: input.overlay ?? null,
+    ...(input.grid ? { grid: normalizeGrid(input.grid) } : {}),
   };
 }

@@ -1,6 +1,9 @@
 import type { FactionDropEvent, Hit, MapClick, UnitDragEvent } from './mapFactory.ts';
 import { useStore } from '../state/store.ts';
+import type { Selection } from '../state/types.ts';
 import { findRegionAt, loadRegions } from './geo.ts';
+import { pointerMods } from './keyboard.ts';
+import { parseUnitDrag, usePlacement } from './placement.ts';
 
 /* Regras de clique, arrastar e soltar no mapa, de acordo com a ferramenta ativa. */
 
@@ -73,31 +76,44 @@ async function paintAtHit(hit: Hit, lon: number, lat: number, faction: string): 
   return false;
 }
 
-function selectAtHit(hit: Hit): void {
-  const s = st();
+/* Alvo do clique como item selecionável (null se o clique não pegou nada que se selecione). */
+function hitSelection(hit: Hit): Selection | null {
   switch (hit.kind) {
     case 'unit':
-      if (hit.id) s.select({ kind: 'unit', id: hit.id });
-      return;
     case 'arrow':
-      if (hit.id) s.select({ kind: 'arrow', id: hit.id });
-      return;
     case 'event':
-      if (hit.id) s.select({ kind: 'event', id: hit.id });
-      return;
+      return hit.id ? { kind: hit.kind, id: hit.id } : null;
     case 'country':
     case 'region':
-      if (hit.iso) s.select({ kind: 'country', id: hit.iso });
-      else s.select(null);
-      return;
+      return hit.iso ? { kind: 'country', id: hit.iso } : null;
     default:
-      s.select(null);
+      return null;
   }
+}
+
+/* Clique com a ferramenta Selecionar: simples troca a seleção; Shift acrescenta; Ctrl alterna. */
+function selectAtHit(hit: Hit): void {
+  const s = st();
+  const mods = pointerMods();
+  const item = hitSelection(hit);
+  if (!item) {
+    if (!mods.shift && !mods.ctrl) s.select(null);
+    return;
+  }
+  if (mods.ctrl) s.toggleSelect(item);
+  else if (mods.shift) s.addToSelection(item);
+  else s.select(item);
 }
 
 export function handleMapClick(e: MapClick): void {
   const s = st();
   const { lat, lon, hit } = e;
+  /* Modo "colocar" (paleta de unidades): o clique põe uma unidade e o modo continua até Esc. */
+  const placing = usePlacement.getState();
+  if (placing.active) {
+    s.addUnit({ type: placing.type, echelon: placing.echelon, lat, lon });
+    return;
+  }
   switch (s.mode) {
     case 'paint':
       void paintAtHit(hit, lon, lat, s.selFaction);
@@ -114,7 +130,10 @@ export function handleMapClick(e: MapClick): void {
       s.addEvent({ lat, lon });
       return;
     case 'move':
-      if (s.sel?.kind === 'unit') s.moveUnitTo(s.sel.id, lat, lon);
+      if (s.sel?.kind === 'unit') {
+        s.breakHistory(); // cada clique é um passo do desfazer
+        s.moveUnitTo(s.sel.id, lat, lon);
+      }
       else s.toast('Selecione uma unidade primeiro.', 'warn');
       return;
     case 'calib':
@@ -143,11 +162,19 @@ export function handleUnitDrag(e: UnitDragEvent): void {
     return;
   }
   if (e.phase === 'move') s.moveUnitTo(e.unitId, e.lat, e.lon);
+  /* Soltar o arrasto encerra o desfazer contínuo: o próximo movimento vira outro passo. */
+  if (e.phase === 'end') s.breakHistory();
 }
 
-/* Soltar a alça de uma força: sobre uma unidade, troca a força da unidade; sobre um país ou região, pinta. */
+/* Soltar no mapa. Um símbolo arrastado da paleta cria a unidade no ponto do drop (payload com prefixo).
+   Uma alça de força: sobre uma unidade, troca a força da unidade; sobre um país ou região, pinta. */
 export function handleFactionDrop(e: FactionDropEvent): void {
   const s = st();
+  const unit = parseUnitDrag(e.factionId);
+  if (unit) {
+    s.addUnit({ ...unit, lat: e.lat, lon: e.lon });
+    return;
+  }
   const fid = e.factionId;
   s.setSelFaction(fid);
   if (e.hit.kind === 'unit' && e.hit.id) {

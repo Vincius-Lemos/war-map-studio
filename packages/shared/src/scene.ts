@@ -84,6 +84,19 @@ export interface Overlay {
   opacity: number;
 }
 
+/* Grades de referência. Opcional na cena: campo ausente = tudo desligado (ver defaultGrid em grid.ts). */
+export interface GridConfig {
+  /* graticule lat/lon; step em graus, 0 = automático pelo zoom */
+  lonLat: { enabled: boolean; step: number };
+  /* grade militar aproximada (UTM 100 km, com subdivisão de 10 km ao aproximar) */
+  mgrs: { enabled: boolean };
+  /* grade do usuário: passo em km ou graus, a partir da origem (lat0, lon0) */
+  custom: { enabled: boolean; step: number; unit: 'km' | 'deg'; lat0: number; lon0: number };
+  opacity: number;        // 0..1
+  snap: boolean;          // encaixe: unidades colocadas vão para o centro da célula
+  snapStep: number;       // tamanho da célula de encaixe, em graus
+}
+
 export interface Scene {
   title: string;
   startDate: string;      // ISO local, ex.: '2022-02-24T00:00' ('' = sem data)
@@ -103,6 +116,7 @@ export interface Scene {
   territories: Territory[];
   orgFlags: OrgFlag[];
   overlay: Overlay | null;
+  grid?: GridConfig;
 }
 
 export const UNIT_TYPE_LABELS: Record<UnitType, string> = {

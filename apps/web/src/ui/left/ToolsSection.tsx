@@ -26,7 +26,7 @@ export function ToolsSection() {
       </div>
       {mode === 'paint' && <PaintOptions />}
       <div className="small muted" style={{ marginTop: 8 }}>
-        Atalhos: <b>V M P A E C</b> trocam a ferramenta · <b>Espaço</b> play · <b>←/→</b> ±1 h · <b>Del</b> apaga o selecionado
+        Atalhos: <b>V M P A E C</b> trocam a ferramenta · <b>1–9 0</b> colocam unidades · <b>Esc</b> cancela · <b>Espaço</b> play · <b>←/→</b> ±1 h · <b>Del</b> apaga o selecionado
       </div>
     </Section>
   );

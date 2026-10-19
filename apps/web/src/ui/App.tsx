@@ -4,11 +4,15 @@ import { LeftPanel } from './left/LeftPanel.tsx';
 import { RightPanel } from './right/RightPanel.tsx';
 import { MapView } from './MapView.tsx';
 import { MapOverlay } from './MapOverlay.tsx';
+import { MeasureTool } from './measure/MeasureTool.tsx';
+import { LayersPanel } from './layers/LayersPanel.tsx';
 import { Timeline } from './timeline/Timeline.tsx';
 import { Toasts } from './Toasts.tsx';
 import { StartWizard } from './dialogs/StartWizard.tsx';
 import { AiDialog } from './dialogs/AiDialog.tsx';
 import { ExportDialog } from './dialogs/ExportDialog.tsx';
+import { SelectionBar } from './editing/SelectionBar.tsx';
+import { HelpDialog } from './editing/HelpDialog.tsx';
 
 export function App() {
   return (
@@ -18,6 +22,9 @@ export function App() {
       <main className="stage">
         <MapView />
         <MapOverlay />
+        <MeasureTool />
+        <LayersPanel />
+        <SelectionBar />
       </main>
       <RightPanel />
       <Timeline />
@@ -32,5 +39,6 @@ function Dialogs() {
   if (dialog === 'wiz') return <StartWizard />;
   if (dialog === 'ai') return <AiDialog />;
   if (dialog === 'export') return <ExportDialog />;
+  if (dialog === 'help') return <HelpDialog />;
   return null;
 }

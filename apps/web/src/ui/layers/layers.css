@@ -1,0 +1,37 @@
+/* Painel de camadas sobre o mapa. */
+.ly-panel {
+  position: absolute;
+  right: 56px;
+  top: 174px;
+  z-index: 6;
+  width: 276px;
+  max-height: calc(100% - 200px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(12, 16, 22, .96);
+  border: 1px solid #2c3a4f;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+  font-size: 12.5px;
+  color: #e7edf4;
+}
+.ly-panel:focus { outline: none; }
+.ly-head { display: flex; align-items: center; justify-content: space-between; }
+.ly-group { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ly-group legend {
+  font-size: 10.5px;
+  letter-spacing: .9px;
+  text-transform: uppercase;
+  color: var(--mut);
+  font-weight: 700;
+  padding: 0;
+  margin-bottom: 4px;
+}
+.ly-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+.ly-row:hover { background: var(--panel2); }
+.ly-row input { accent-color: var(--acc); width: 16px; height: 16px; margin: 0; flex: none; }
+.ly-row:focus-within { outline: 2px solid var(--acc); outline-offset: 1px; }
+.ly-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #2c3a4f; padding-top: 8px; }
