@@ -19,8 +19,9 @@
 .mt-btn:hover { background: var(--panel3); }
 .mt-btn.on { border-color: var(--acc); background: #15263d; }
 .mt-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
-.measure-btn { top: 132px; }
-.layers-btn { top: 174px; }
+/* abaixo do painel .mapctl (cinco botões, ~190px a partir do topo de 12px) */
+.measure-btn { top: 204px; }
+.layers-btn { top: 246px; }
 
 /* Régua: linhas e rótulos sobre o mapa (não recebem o mouse) */
 .rl-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; overflow: visible; }

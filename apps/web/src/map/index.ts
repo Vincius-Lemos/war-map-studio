@@ -44,6 +44,8 @@ export interface MapApi {
   loadRegions(iso: string): Promise<void>;
   /* Projeção geográfico -> tela (pixels do contêiner do mapa); null se o ponto for inválido. */
   toScreen(lat: number, lon: number): { x: number; y: number } | null;
+  /* Tela -> geográfico (x, y em px do contêiner do mapa); inverso de toScreen. */
+  toLatLon(x: number, y: number): { lat: number; lon: number } | null;
   /* Troca a grade desenhada e redesenha. Vale até a cena receber outra grade (edição ou render com outra cena). */
   setGrid(g: GridConfig): void;
 }
@@ -980,6 +982,11 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       if (disposed || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
       const p = map.project([lon, lat]);
       return Number.isFinite(p.x) && Number.isFinite(p.y) ? { x: p.x, y: p.y } : null;
+    },
+    toLatLon(x, y) {
+      if (disposed || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+      const ll = map.unproject([x, y]);
+      return Number.isFinite(ll.lat) && Number.isFinite(ll.lng) ? { lat: ll.lat, lon: ll.lng } : null;
     },
     setGrid(g) {
       if (disposed) return;

@@ -18,14 +18,14 @@ function circleRing(c: VisionCircle): [number, number][] {
   return ring;
 }
 
-export function fogLayer(circles: readonly VisionCircle[], region: Region, opacity = 0.62) {
-  const padX = (region.lon1 - region.lon0) * 0.3;
-  const padY = (region.lat1 - region.lat0) * 0.3;
+/* A névoa cobre o mundo inteiro (não só a área da cena): assim a tela toda fica escura fora da visão. */
+export function fogLayer(circles: readonly VisionCircle[], _region: Region, opacity = 0.62) {
+  /* bordas um pouco dentro de ±180/±85: anel exatamente no antimeridiano some na triangulação do deck.gl */
   const outer: [number, number][] = [
-    [region.lon0 - padX, region.lat0 - padY],
-    [region.lon1 + padX, region.lat0 - padY],
-    [region.lon1 + padX, region.lat1 + padY],
-    [region.lon0 - padX, region.lat1 + padY],
+    [-179.99, -84],
+    [179.99, -84],
+    [179.99, 84],
+    [-179.99, 84],
   ];
   const polygon = [outer, ...circles.map(circleRing)];
   return new PolygonLayer<{ polygon: [number, number][][] }>({
