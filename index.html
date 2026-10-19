@@ -247,6 +247,7 @@ table.wp input{padding:4px 6px}
 
 <input type="file" id="fileOpen" accept="application/json" hidden>
 <input type="file" id="fileImg" accept="image/*" hidden>
+<input type="file" id="fileOrg" accept="image/*" hidden>
 
 <script>
 /* =====================================================================
@@ -324,6 +325,7 @@ const S = {
   mode: 'select', sel: {kind: null, id: null}, pending: null,
   countries: [], selFaction: 'f2', tab: 'sel', filter: '',
   ctrlKey: '', tickKey: '', hudKey: '', admin1: new Map(),
+  paintLevel: 'country', paintFlag: null,
 };
 const SYM = new Map();
 
@@ -359,6 +361,7 @@ function normalize(s){
   s.arrows ??= [];
   s.events ??= [];
   s.overlay ??= null;
+  s.orgFlags ??= [];
   s.territories = (s.territories || []).filter(t => !t.sub);
   const LEGACY = {'440':'LT','428':'LV','616':'PL','112':'BY','233':'EE','643':'RU','804':'UA','276':'DE','250':'FR','076':'BR','032':'AR','858':'UY'};
   s.territories.forEach(t => { if(LEGACY[t.iso]) t.iso = LEGACY[t.iso]; });
@@ -453,6 +456,8 @@ const world = svg.append('g');
 const gBase = world.append('g');
 const gOverlay = world.append('g');
 const gLand = world.append('g');
+const gFlags = world.append('g');
+const gSub = world.append('g');
 const gTrails = world.append('g');
 const gArrows = world.append('g');
 const gEvents = world.append('g');
@@ -470,6 +475,7 @@ let landSel = null;
 
 const zoom = d3.zoom()
   .scaleExtent([0.3, 25])
+  .clickDistance(4)
   .filter(e => {
     if(e.type === 'wheel') return true;
     if(e.button) return false;
@@ -709,6 +715,7 @@ function symbolFor(u, fac){
 function renderFrame(){
   const t = S.t, sc = S.scene;
   renderLand();
+  renderFlags();
 
   // rastros
   const trails = [];
@@ -883,7 +890,8 @@ function onMapClick(e){
     case 'paint': {
       const f = countryAt(lon, lat);
       if(!f) return;
-      setTerritory(isoOf(f), f.properties.name, S.selFaction);
+      if(S.paintLevel === 'region') paintRegionAt(f, lon, lat, S.selFaction);
+      else setTerritory(isoOf(f), f.properties.name, S.selFaction);
       return;
     }
     case 'arrow': {
@@ -935,10 +943,142 @@ function onMapClick(e){
 svg.on('click', onMapClick);
 
 /* ---------------- território ---------------- */
+/* ---------------- bandeiras e regiões internas ----------------
+   Cada país controlado mostra a sua bandeira oficial. Cada região (estado/província)
+   também mostra a bandeira do país, a menos que você escolha uma bandeira de organização. */
+const ISO3 = {};
+const flagUrlOf = code => code ? `https://flagcdn.com/${String(code).toLowerCase()}.svg` : '';
+function flagSrc(entryFlag, iso){
+  if(entryFlag){ const o = (S.scene.orgFlags || []).find(x => x.id === entryFlag); if(o) return o.src; }
+  return flagUrlOf(iso);
+}
+const safeId = s => String(s).replace(/[^A-Za-z0-9_-]/g, '_');
+function subControlAt(t){
+  const m = new Map();
+  for(const e of S.scene.territories){
+    if(!e.sub || e.t > t) continue;
+    const cur = m.get(e.sub);
+    if(!cur || e.t >= cur.t) m.set(e.sub, e);
+  }
+  return m;
+}
+const allSubFeatures = () => [...S.admin1.values()].flat();
+const subFeature = key => allSubFeatures().find(f => f.properties.shapeID === key);
+let flagKey = '';
+function renderFlags(){
+  if(!landSel) return;
+  const ctrl = controlAt(S.t), subs = subControlAt(S.t);
+  const items = [];
+  for(const [iso, e] of ctrl){
+    const f = S.countries.find(c => isoOf(c) === iso);
+    if(f) items.push({id: 'c_' + safeId(iso), feat: f, fac: e.faction, src: flagSrc(e.flag, iso)});
+  }
+  for(const [key, e] of subs){
+    const feat = subFeature(key);
+    if(feat) items.push({id: 's_' + safeId(key), feat, fac: e.faction, src: flagSrc(e.flag, e.iso)});
+  }
+  const k = items.map(i => i.id + '|' + i.src + '|' + i.fac).join(',');
+  if(k === flagKey) return;
+  flagKey = k;
+  gFlags.selectAll('g.fl').data(items, d => d.id).join(
+    enter => {
+      const g = enter.append('g').attr('class', 'fl');
+      g.append('path').attr('class', 'base');
+      g.append('clipPath').append('path');
+      g.append('image').attr('preserveAspectRatio', 'xMidYMid slice');
+      return g;
+    },
+    update => update,
+    exit => exit.remove()
+  ).each(function(d){
+    const g = d3.select(this);
+    const d0 = pathGen(d.feat);
+    const b = pathGen.bounds(d.feat);
+    g.select('path.base').attr('d', d0).attr('fill', facColor(d.fac));
+    g.select('clipPath').attr('id', 'clip_' + d.id);
+    g.select('clipPath path').attr('d', d0);
+    g.select('image').attr('href', d.src)
+      .attr('x', b[0][0]).attr('y', b[0][1]).attr('width', b[1][0] - b[0][0]).attr('height', b[1][1] - b[0][1])
+      .attr('clip-path', `url(#clip_${d.id})`);
+  });
+}
+function drawSubOutlines(){
+  if(!landSel) return;
+  gSub.selectAll('path').data(allSubFeatures(), d => d.properties.shapeID).join('path')
+    .attr('d', pathGen).attr('fill', 'none').attr('stroke', '#4b4333').attr('stroke-width', 0.9)
+    .attr('vector-effect', 'non-scaling-stroke').attr('pointer-events', 'none');
+}
+/* regiões de um país (estados/províncias), carregadas sob demanda pelo geoBoundaries */
+async function ensureAdmin1(iso){
+  if(S.admin1.has(iso)) return S.admin1.get(iso);
+  const iso3 = ISO3[iso];
+  if(!iso3){ S.admin1.set(iso, []); return []; }
+  toast('Carregando regiões…');
+  try{
+    const meta = await (await fetch(`https://www.geoboundaries.org/api/current/gbOpen/${iso3}/ADM1/`)).json();
+    const r = await fetch(String(meta.simplifiedGeometryGeoJSON).replace(/\s/g, ''));
+    if(!r.ok) throw new Error('geometria indisponível');
+    const gj = await r.json();
+    const feats = gj.features.map((f, i) => { f.properties.shapeID ??= `${iso3}-${i}`; return f; });
+    S.admin1.set(iso, feats);
+    flagKey = '';
+    drawSubOutlines();
+    toast(`${feats.length} regiões carregadas.`, 'ok');
+    return feats;
+  }catch(err){
+    S.admin1.set(iso, []);
+    toast('Não encontrei as regiões deste país.', 'warn');
+    return [];
+  }
+}
+async function paintRegionAt(f, lon, lat, fid){
+  const iso = isoOf(f);
+  const feats = await ensureAdmin1(iso);
+  if(!feats.length) return;
+  const st = feats.find(x => d3.geoContains(x, [lon, lat]));
+  if(!st) return toast(`Clique dentro de uma região de ${f.properties.name}.`, 'warn');
+  setSubTerritory(st, iso, f.properties.name, fid);
+}
+function setSubTerritory(st, iso, countryName, fid){
+  const t = r2(S.t), key = st.properties.shapeID;
+  S.scene.territories = S.scene.territories.filter(e => !(e.sub === key && Math.abs(e.t - t) < 0.02));
+  const entry = {iso, sub: key, name: `${st.properties.shapeName} (${countryName})`, t, faction: fid};
+  if(S.paintFlag) entry.flag = S.paintFlag;
+  S.scene.territories.push(entry);
+  S.flagKey = '';
+  toast(`${entry.name}: ${facName(fid)} a partir de ${clockParts(t).main}.`, 'ok');
+  refresh();
+}
+function paintPanel(){
+  const orgs = S.scene.orgFlags || [];
+  return `<div class="h" style="margin-top:12px">Pintar</div>
+    <div class="grid2">
+      <button class="btn sm ${S.paintLevel === 'country' ? 'primary' : ''}" data-act="paintlevel" data-level="country">País inteiro</button>
+      <button class="btn sm ${S.paintLevel === 'region' ? 'primary' : ''}" data-act="paintlevel" data-level="region">Estado / região</button>
+    </div>
+    <label class="field"><span>Bandeira ao pintar</span>
+      <select id="paintFlagSel">
+        <option value="">Bandeira oficial do país</option>
+        ${orgs.map(o => `<option value="${o.id}" ${S.paintFlag === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}
+      </select></label>
+    <button class="btn sm" data-act="orgflag">+ Bandeira de organização</button>
+    <p class="muted small">Regiões usam a bandeira do país, a menos que você escolha uma bandeira de organização (por exemplo, a de um grupo que controla aquela área).</p>`;
+}
+async function preloadFlags(){
+  for(const img of gFlags.selectAll('image').nodes()){
+    const h = img.getAttribute('href');
+    if(h && !h.startsWith('data:') && !tileCache.has(h)){
+      try{ tileCache.set(h, await blobToDataURL(h)); }catch(_){}
+    }
+  }
+}
+
 function setTerritory(iso, name, faction){
   const t = r2(S.t);
-  S.scene.territories = S.scene.territories.filter(e => !(e.iso === iso && Math.abs(e.t - t) < 0.02));
-  S.scene.territories.push({iso, name, t, faction});
+  S.scene.territories = S.scene.territories.filter(e => !(!e.sub && e.iso === iso && Math.abs(e.t - t) < 0.02));
+  const entry = {iso, name, t, faction};
+  if(S.paintFlag) entry.flag = S.paintFlag;
+  S.scene.territories.push(entry);
   S.ctrlKey = '';
   toast(`${name}: ${facName(faction)} a partir de ${clockParts(t).main}.`, 'ok');
   refresh();
@@ -958,6 +1098,7 @@ function renderLeft(){
         ${MODES.map(m => `<button class="tool ${S.mode === m.id ? 'on' : ''}" data-mode="${m.id}" title="${m.hint}">
           <b>${m.label}</b><kbd>${m.key}</kbd><small>${m.id === 'select' ? 'Padrão' : ''}</small></button>`).join('')}
       </div>
+      ${S.mode === 'paint' ? paintPanel() : ''}
       <div class="small muted" style="margin-top:8px">Atalhos: <b>V M P A E C</b> trocam a ferramenta · <b>Espaço</b> play · <b>←/→</b> ±1 h · <b>Del</b> apaga o selecionado</div>
     </div>
   </details>
@@ -1215,6 +1356,7 @@ function refresh(){
   renderInspector();
   drawBase();
   drawOverlay();
+  drawSubOutlines();
   renderFrame();
   renderLabels();
   renderTimeline();
@@ -1327,6 +1469,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if(el.id === 'unitSearch') return;
+  if(el.id === 'paintFlagSel'){ S.paintFlag = el.value || null; renderLeft(); return; }
   if(el.dataset.kind && el.dataset.field){
     applyField(el.dataset.kind, el.dataset.id, el.dataset.field, el.type === 'checkbox' ? el.checked : el.value, el.dataset.idx);
   }
@@ -1388,6 +1531,8 @@ function runAct(a, el){
       break;
     }
     case 'loadimg': $('#fileImg').click(); break;
+    case 'paintlevel': S.paintLevel = el.dataset.level; refresh(); break;
+    case 'orgflag': $('#fileOrg').click(); break;
     case 'calib': setMode('calib'); break;
     case 'rmov': S.scene.overlay = null; refresh(); break;
   }
@@ -1405,6 +1550,7 @@ function dropTarget(e){
   if(S.scene.mapType === 'tiles') return {kind: null, label: 'Mapa de ruas: solte sobre uma unidade'};
   const ll = proj.invert(d3.pointer(e, world.node()));
   const f = ll && countryAt(ll[0], ll[1]);
+  if(f && S.paintLevel === 'region') return {kind: 'region', feat: f, lon: ll[0], lat: ll[1], label: `Pintar região de ${f.properties.name}`};
   if(f) return {kind: 'country', iso: isoOf(f), name: f.properties.name, label: `Pintar: ${f.properties.name}`};
   return {kind: null, label: 'Solte sobre um país ou uma unidade'};
 }
@@ -1456,6 +1602,9 @@ stageEl.addEventListener('drop', e => {
   } else if(tg.kind === 'country'){
     S.selFaction = fid;
     setTerritory(tg.iso, tg.name, fid);
+  } else if(tg.kind === 'region'){
+    S.selFaction = fid;
+    paintRegionAt(tg.feat, tg.lon, tg.lat, fid);
   } else {
     toast(tg.label, 'warn');
   }
@@ -1560,6 +1709,22 @@ function loadOverlay(file){
   r.readAsDataURL(file);
 }
 $('#fileImg').addEventListener('change', e => { loadOverlay(e.target.files[0]); e.target.value = ''; });
+$('#fileOrg').addEventListener('change', e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if(!f) return;
+  const name = prompt('Nome da organização (ex.: nome do grupo):', 'Organização');
+  if(!name) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const id = 'org' + uid();
+    S.scene.orgFlags.push({id, name: name.trim(), src: r.result});
+    S.paintFlag = id;
+    refresh();
+    toast('Bandeira adicionada. Ela será usada ao pintar.', 'ok');
+  };
+  r.readAsDataURL(f);
+});
 
 /* ---------------- criar com IA: importação ---------------- */
 const AI_PROMPT = `Você vai montar uma cena para o "Mapa Tático". Responda SOMENTE com um JSON válido, sem texto antes ou depois, seguindo este formato:
@@ -1710,6 +1875,7 @@ async function svgImage(){
 }
 async function exportPNG(){
   toast('Gerando imagem…');
+  await preloadFlags();
   const tr = await preloadTiles();
   const img = await svgImage();
   const cv = document.createElement('canvas');
@@ -1723,6 +1889,7 @@ async function exportVideo(){
   const status = $('#expStatus');
   if(S.playing) togglePlay();
   status.textContent = 'Preparando…';
+  await preloadFlags();
   const tr = await preloadTiles();
   if(tr.total && tr.ok < tr.total) toast(`Aviso: ${tr.total - tr.ok} blocos do mapa de fundo não baixaram.`, 'warn', 5000);
   const sec = clamp(parseFloat($('#vidSec').value) || 20, 3, 180);
@@ -1799,6 +1966,7 @@ async function init(){
       d3.json('https://cdn.jsdelivr.net/npm/i18n-iso-countries@7.14.0/codes.json'),
     ]);
     const toA2 = Object.fromEntries(codes.map(c => [c[2], c[0]]));
+    codes.forEach(c => { ISO3[c[0]] = c[1]; });
     S.countries = topojson.feature(topo, topo.objects.countries).features
       .filter(f => f.properties.name !== 'Antarctica')
       .map(f => { f.properties['hc-a2'] = toA2[String(f.id).padStart(3, '0')] || ''; return f; });
