@@ -1,0 +1,17 @@
+{
+  "name": "map-draw",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Mapa Tático: movimentos militares, controle territorial e exportação de vídeo",
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "apps/web",
+    "apps/server",
+    "apps/export",
+    "data"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

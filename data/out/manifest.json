@@ -1,0 +1,2078 @@
+{
+  "generatedAt": "2026-10-19T13:46:08.836Z",
+  "sources": {
+    "countries": "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson",
+    "admin1": "https://github.com/wmgeolab/geoBoundaries (gbOpen, commit 9469f09, ADM1 simplified)"
+  },
+  "tolerance": {
+    "countries": 0.0002,
+    "admin1": 0.00005
+  },
+  "totals": {
+    "countries": 237,
+    "countriesWithAdmin1": 197,
+    "regions": 3222,
+    "countriesJsonBytes": 4304383,
+    "admin1Bytes": 20472731
+  },
+  "countries": [
+    {
+      "iso2": "AF",
+      "iso3": "AFG",
+      "name": "Afghanistan",
+      "regions": 34,
+      "admin1Bytes": 64488,
+      "admin1File": "admin1/AFG.json"
+    },
+    {
+      "iso2": "AX",
+      "iso3": "ALA",
+      "name": "Aland",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "AL",
+      "iso3": "ALB",
+      "name": "Albania",
+      "regions": 12,
+      "admin1Bytes": 19572,
+      "admin1File": "admin1/ALB.json"
+    },
+    {
+      "iso2": "DZ",
+      "iso3": "DZA",
+      "name": "Algeria",
+      "regions": 48,
+      "admin1Bytes": 154776,
+      "admin1File": "admin1/DZA.json"
+    },
+    {
+      "iso2": "AS",
+      "iso3": "ASM",
+      "name": "American Samoa",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "AD",
+      "iso3": "AND",
+      "name": "Andorra",
+      "regions": 7,
+      "admin1Bytes": 2941,
+      "admin1File": "admin1/AND.json"
+    },
+    {
+      "iso2": "AO",
+      "iso3": "AGO",
+      "name": "Angola",
+      "regions": 18,
+      "admin1Bytes": 111647,
+      "admin1File": "admin1/AGO.json"
+    },
+    {
+      "iso2": "AI",
+      "iso3": "AIA",
+      "name": "Anguilla",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "AQ",
+      "iso3": "ATA",
+      "name": "Antarctica",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "AG",
+      "iso3": "ATG",
+      "name": "Antigua and Barbuda",
+      "regions": 7,
+      "admin1Bytes": 3895,
+      "admin1File": "admin1/ATG.json"
+    },
+    {
+      "iso2": "AR",
+      "iso3": "ARG",
+      "name": "Argentina",
+      "regions": 23,
+      "admin1Bytes": 72587,
+      "admin1File": "admin1/ARG.json"
+    },
+    {
+      "iso2": "AM",
+      "iso3": "ARM",
+      "name": "Armenia",
+      "regions": 11,
+      "admin1Bytes": 18279,
+      "admin1File": "admin1/ARM.json"
+    },
+    {
+      "iso2": "AW",
+      "iso3": "ABW",
+      "name": "Aruba",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "AU",
+      "iso3": "AUS",
+      "name": "Australia",
+      "regions": 9,
+      "admin1Bytes": 386887,
+      "admin1File": "admin1/AUS.json"
+    },
+    {
+      "iso2": "AT",
+      "iso3": "AUT",
+      "name": "Austria",
+      "regions": 9,
+      "admin1Bytes": 48264,
+      "admin1File": "admin1/AUT.json"
+    },
+    {
+      "iso2": "AZ",
+      "iso3": "AZE",
+      "name": "Azerbaijan",
+      "regions": 2,
+      "admin1Bytes": 17016,
+      "admin1File": "admin1/AZE.json"
+    },
+    {
+      "iso2": "BH",
+      "iso3": "BHR",
+      "name": "Bahrain",
+      "regions": 4,
+      "admin1Bytes": 4300,
+      "admin1File": "admin1/BHR.json"
+    },
+    {
+      "iso2": "BD",
+      "iso3": "BGD",
+      "name": "Bangladesh",
+      "regions": 8,
+      "admin1Bytes": 29369,
+      "admin1File": "admin1/BGD.json"
+    },
+    {
+      "iso2": "BB",
+      "iso3": "BRB",
+      "name": "Barbados",
+      "regions": 11,
+      "admin1Bytes": 3379,
+      "admin1File": "admin1/BRB.json"
+    },
+    {
+      "iso2": "BY",
+      "iso3": "BLR",
+      "name": "Belarus",
+      "regions": 7,
+      "admin1Bytes": 59142,
+      "admin1File": "admin1/BLR.json"
+    },
+    {
+      "iso2": "BE",
+      "iso3": "BEL",
+      "name": "Belgium",
+      "regions": 3,
+      "admin1Bytes": 2547,
+      "admin1File": "admin1/BEL.json"
+    },
+    {
+      "iso2": "BZ",
+      "iso3": "BLZ",
+      "name": "Belize",
+      "regions": 6,
+      "admin1Bytes": 10790,
+      "admin1File": "admin1/BLZ.json"
+    },
+    {
+      "iso2": "BJ",
+      "iso3": "BEN",
+      "name": "Benin",
+      "regions": 12,
+      "admin1Bytes": 16260,
+      "admin1File": "admin1/BEN.json"
+    },
+    {
+      "iso2": "BM",
+      "iso3": "BMU",
+      "name": "Bermuda",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "BT",
+      "iso3": "BTN",
+      "name": "Bhutan",
+      "regions": 20,
+      "admin1Bytes": 27396,
+      "admin1File": "admin1/BTN.json"
+    },
+    {
+      "iso2": "BO",
+      "iso3": "BOL",
+      "name": "Bolivia",
+      "regions": 9,
+      "admin1Bytes": 127017,
+      "admin1File": "admin1/BOL.json"
+    },
+    {
+      "iso2": "BA",
+      "iso3": "BIH",
+      "name": "Bosnia and Herzegovina",
+      "regions": 3,
+      "admin1Bytes": 26625,
+      "admin1File": "admin1/BIH.json"
+    },
+    {
+      "iso2": "BW",
+      "iso3": "BWA",
+      "name": "Botswana",
+      "regions": 10,
+      "admin1Bytes": 30690,
+      "admin1File": "admin1/BWA.json"
+    },
+    {
+      "iso2": "BR",
+      "iso3": "BRA",
+      "name": "Brazil",
+      "regions": 27,
+      "admin1Bytes": 319468,
+      "admin1File": "admin1/BRA.json"
+    },
+    {
+      "iso2": "IO",
+      "iso3": "IOT",
+      "name": "British Indian Ocean Territory",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "VG",
+      "iso3": "VGB",
+      "name": "British Virgin Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "BN",
+      "iso3": "BRN",
+      "name": "Brunei",
+      "regions": 4,
+      "admin1Bytes": 5881,
+      "admin1File": "admin1/BRN.json"
+    },
+    {
+      "iso2": "BG",
+      "iso3": "BGR",
+      "name": "Bulgaria",
+      "regions": 28,
+      "admin1Bytes": 58904,
+      "admin1File": "admin1/BGR.json"
+    },
+    {
+      "iso2": "BF",
+      "iso3": "BFA",
+      "name": "Burkina Faso",
+      "regions": 13,
+      "admin1Bytes": 59452,
+      "admin1File": "admin1/BFA.json"
+    },
+    {
+      "iso2": "BI",
+      "iso3": "BDI",
+      "name": "Burundi",
+      "regions": 18,
+      "admin1Bytes": 23837,
+      "admin1File": "admin1/BDI.json"
+    },
+    {
+      "iso2": "CV",
+      "iso3": "CPV",
+      "name": "Cabo Verde",
+      "regions": 22,
+      "admin1Bytes": 13478,
+      "admin1File": "admin1/CPV.json"
+    },
+    {
+      "iso2": "KH",
+      "iso3": "KHM",
+      "name": "Cambodia",
+      "regions": 25,
+      "admin1Bytes": 74115,
+      "admin1File": "admin1/KHM.json"
+    },
+    {
+      "iso2": "CM",
+      "iso3": "CMR",
+      "name": "Cameroon",
+      "regions": 10,
+      "admin1Bytes": 41319,
+      "admin1File": "admin1/CMR.json"
+    },
+    {
+      "iso2": "CA",
+      "iso3": "CAN",
+      "name": "Canada",
+      "regions": 13,
+      "admin1Bytes": 2629309,
+      "admin1File": "admin1/CAN.json"
+    },
+    {
+      "iso2": "KY",
+      "iso3": "CYM",
+      "name": "Cayman Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "CF",
+      "iso3": "CAF",
+      "name": "Central African Republic",
+      "regions": 17,
+      "admin1Bytes": 39768,
+      "admin1File": "admin1/CAF.json"
+    },
+    {
+      "iso2": "TD",
+      "iso3": "TCD",
+      "name": "Chad",
+      "regions": 23,
+      "admin1Bytes": 46883,
+      "admin1File": "admin1/TCD.json"
+    },
+    {
+      "iso2": "CL",
+      "iso3": "CHL",
+      "name": "Chile",
+      "regions": 16,
+      "admin1Bytes": 677519,
+      "admin1File": "admin1/CHL.json"
+    },
+    {
+      "iso2": "CN",
+      "iso3": "CHN",
+      "name": "China",
+      "regions": 34,
+      "admin1Bytes": 100475,
+      "admin1File": "admin1/CHN.json"
+    },
+    {
+      "iso2": "CO",
+      "iso3": "COL",
+      "name": "Colombia",
+      "regions": 33,
+      "admin1Bytes": 248785,
+      "admin1File": "admin1/COL.json"
+    },
+    {
+      "iso2": "KM",
+      "iso3": "COM",
+      "name": "Comoros",
+      "regions": 3,
+      "admin1Bytes": 2871,
+      "admin1File": "admin1/COM.json"
+    },
+    {
+      "iso2": "CK",
+      "iso3": "COK",
+      "name": "Cook Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "CR",
+      "iso3": "CRI",
+      "name": "Costa Rica",
+      "regions": 7,
+      "admin1Bytes": 27372,
+      "admin1File": "admin1/CRI.json"
+    },
+    {
+      "iso2": "HR",
+      "iso3": "HRV",
+      "name": "Croatia",
+      "regions": 21,
+      "admin1Bytes": 78120,
+      "admin1File": "admin1/HRV.json"
+    },
+    {
+      "iso2": "CU",
+      "iso3": "CUB",
+      "name": "Cuba",
+      "regions": 16,
+      "admin1Bytes": 85163,
+      "admin1File": "admin1/CUB.json"
+    },
+    {
+      "iso2": "CW",
+      "iso3": "CUW",
+      "name": "Curaçao",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "CY",
+      "iso3": "CYP",
+      "name": "Cyprus",
+      "regions": 6,
+      "admin1Bytes": 10898,
+      "admin1File": "admin1/CYP.json"
+    },
+    {
+      "iso2": "CZ",
+      "iso3": "CZE",
+      "name": "Czechia",
+      "regions": 14,
+      "admin1Bytes": 64129,
+      "admin1File": "admin1/CZE.json"
+    },
+    {
+      "iso2": "CD",
+      "iso3": "COD",
+      "name": "Democratic Republic of the Congo",
+      "regions": 26,
+      "admin1Bytes": 235923,
+      "admin1File": "admin1/COD.json"
+    },
+    {
+      "iso2": "DK",
+      "iso3": "DNK",
+      "name": "Denmark",
+      "regions": 5,
+      "admin1Bytes": 48022,
+      "admin1File": "admin1/DNK.json"
+    },
+    {
+      "iso2": "DJ",
+      "iso3": "DJI",
+      "name": "Djibouti",
+      "regions": 6,
+      "admin1Bytes": 4706,
+      "admin1File": "admin1/DJI.json"
+    },
+    {
+      "iso2": "DM",
+      "iso3": "DMA",
+      "name": "Dominica",
+      "regions": 10,
+      "admin1Bytes": 4571,
+      "admin1File": "admin1/DMA.json"
+    },
+    {
+      "iso2": "DO",
+      "iso3": "DOM",
+      "name": "Dominican Republic",
+      "regions": 32,
+      "admin1Bytes": 30535,
+      "admin1File": "admin1/DOM.json"
+    },
+    {
+      "iso2": "TL",
+      "iso3": "TLS",
+      "name": "East Timor",
+      "regions": 13,
+      "admin1Bytes": 14128,
+      "admin1File": "admin1/TLS.json"
+    },
+    {
+      "iso2": "EC",
+      "iso3": "ECU",
+      "name": "Ecuador",
+      "regions": 24,
+      "admin1Bytes": 88133,
+      "admin1File": "admin1/ECU.json"
+    },
+    {
+      "iso2": "EG",
+      "iso3": "EGY",
+      "name": "Egypt",
+      "regions": 27,
+      "admin1Bytes": 46329,
+      "admin1File": "admin1/EGY.json"
+    },
+    {
+      "iso2": "SV",
+      "iso3": "SLV",
+      "name": "El Salvador",
+      "regions": 14,
+      "admin1Bytes": 22833,
+      "admin1File": "admin1/SLV.json"
+    },
+    {
+      "iso2": "GQ",
+      "iso3": "GNQ",
+      "name": "Equatorial Guinea",
+      "regions": 7,
+      "admin1Bytes": 9018,
+      "admin1File": "admin1/GNQ.json"
+    },
+    {
+      "iso2": "ER",
+      "iso3": "ERI",
+      "name": "Eritrea",
+      "regions": 6,
+      "admin1Bytes": 32843,
+      "admin1File": "admin1/ERI.json"
+    },
+    {
+      "iso2": "EE",
+      "iso3": "EST",
+      "name": "Estonia",
+      "regions": 15,
+      "admin1Bytes": 55251,
+      "admin1File": "admin1/EST.json"
+    },
+    {
+      "iso2": "SZ",
+      "iso3": "SWZ",
+      "name": "eSwatini",
+      "regions": 4,
+      "admin1Bytes": 7098,
+      "admin1File": "admin1/SWZ.json"
+    },
+    {
+      "iso2": "ET",
+      "iso3": "ETH",
+      "name": "Ethiopia",
+      "regions": 11,
+      "admin1Bytes": 92410,
+      "admin1File": "admin1/ETH.json"
+    },
+    {
+      "iso2": "FK",
+      "iso3": "FLK",
+      "name": "Falkland Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "FO",
+      "iso3": "FRO",
+      "name": "Faroe Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "FM",
+      "iso3": "FSM",
+      "name": "Federated States of Micronesia",
+      "regions": 4,
+      "admin1Bytes": 4698,
+      "admin1File": "admin1/FSM.json"
+    },
+    {
+      "iso2": "FJ",
+      "iso3": "FJI",
+      "name": "Fiji",
+      "regions": 4,
+      "admin1Bytes": 13330,
+      "admin1File": "admin1/FJI.json"
+    },
+    {
+      "iso2": "FI",
+      "iso3": "FIN",
+      "name": "Finland",
+      "regions": 19,
+      "admin1Bytes": 182807,
+      "admin1File": "admin1/FIN.json"
+    },
+    {
+      "iso2": "FR",
+      "iso3": "FRA",
+      "name": "France",
+      "regions": 13,
+      "admin1Bytes": 152219,
+      "admin1File": "admin1/FRA.json"
+    },
+    {
+      "iso2": "PF",
+      "iso3": "PYF",
+      "name": "French Polynesia",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "TF",
+      "iso3": "ATF",
+      "name": "French Southern and Antarctic Lands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "GA",
+      "iso3": "GAB",
+      "name": "Gabon",
+      "regions": 9,
+      "admin1Bytes": 26006,
+      "admin1File": "admin1/GAB.json"
+    },
+    {
+      "iso2": "GM",
+      "iso3": "GMB",
+      "name": "Gambia",
+      "regions": 8,
+      "admin1Bytes": 13364,
+      "admin1File": "admin1/GMB.json"
+    },
+    {
+      "iso2": "GE",
+      "iso3": "GEO",
+      "name": "Georgia",
+      "regions": 12,
+      "admin1Bytes": 34081,
+      "admin1File": "admin1/GEO.json"
+    },
+    {
+      "iso2": "DE",
+      "iso3": "DEU",
+      "name": "Germany",
+      "regions": 16,
+      "admin1Bytes": 147460,
+      "admin1File": "admin1/DEU.json"
+    },
+    {
+      "iso2": "GH",
+      "iso3": "GHA",
+      "name": "Ghana",
+      "regions": 16,
+      "admin1Bytes": 55777,
+      "admin1File": "admin1/GHA.json"
+    },
+    {
+      "iso2": "GI",
+      "iso3": "GIB",
+      "name": "Gibraltar",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "GR",
+      "iso3": "GRC",
+      "name": "Greece",
+      "regions": 8,
+      "admin1Bytes": 97426,
+      "admin1File": "admin1/GRC.json"
+    },
+    {
+      "iso2": "GL",
+      "iso3": "GRL",
+      "name": "Greenland",
+      "regions": 6,
+      "admin1Bytes": 394976,
+      "admin1File": "admin1/GRL.json"
+    },
+    {
+      "iso2": "GD",
+      "iso3": "GRD",
+      "name": "Grenada",
+      "regions": 7,
+      "admin1Bytes": 2888,
+      "admin1File": "admin1/GRD.json"
+    },
+    {
+      "iso2": "GU",
+      "iso3": "GUM",
+      "name": "Guam",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "GT",
+      "iso3": "GTM",
+      "name": "Guatemala",
+      "regions": 22,
+      "admin1Bytes": 47222,
+      "admin1File": "admin1/GTM.json"
+    },
+    {
+      "iso2": "GG",
+      "iso3": "GGY",
+      "name": "Guernsey",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "GN",
+      "iso3": "GIN",
+      "name": "Guinea",
+      "regions": 8,
+      "admin1Bytes": 56181,
+      "admin1File": "admin1/GIN.json"
+    },
+    {
+      "iso2": "GW",
+      "iso3": "GNB",
+      "name": "Guinea-Bissau",
+      "regions": 9,
+      "admin1Bytes": 25271,
+      "admin1File": "admin1/GNB.json"
+    },
+    {
+      "iso2": "GY",
+      "iso3": "GUY",
+      "name": "Guyana",
+      "regions": 10,
+      "admin1Bytes": 39656,
+      "admin1File": "admin1/GUY.json"
+    },
+    {
+      "iso2": "HT",
+      "iso3": "HTI",
+      "name": "Haiti",
+      "regions": 10,
+      "admin1Bytes": 27399,
+      "admin1File": "admin1/HTI.json"
+    },
+    {
+      "iso2": "HM",
+      "iso3": "HMD",
+      "name": "Heard Island and McDonald Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "HN",
+      "iso3": "HND",
+      "name": "Honduras",
+      "regions": 18,
+      "admin1Bytes": 53641,
+      "admin1File": "admin1/HND.json"
+    },
+    {
+      "iso2": "HK",
+      "iso3": "HKG",
+      "name": "Hong Kong S.A.R.",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "HU",
+      "iso3": "HUN",
+      "name": "Hungary",
+      "regions": 19,
+      "admin1Bytes": 48355,
+      "admin1File": "admin1/HUN.json"
+    },
+    {
+      "iso2": "IS",
+      "iso3": "ISL",
+      "name": "Iceland",
+      "regions": 8,
+      "admin1Bytes": 75022,
+      "admin1File": "admin1/ISL.json"
+    },
+    {
+      "iso2": "IN",
+      "iso3": "IND",
+      "name": "India",
+      "regions": 36,
+      "admin1Bytes": 579322,
+      "admin1File": "admin1/IND.json"
+    },
+    {
+      "iso2": "ID",
+      "iso3": "IDN",
+      "name": "Indonesia",
+      "regions": 34,
+      "admin1Bytes": 567473,
+      "admin1File": "admin1/IDN.json"
+    },
+    {
+      "iso2": "IR",
+      "iso3": "IRN",
+      "name": "Iran",
+      "regions": 32,
+      "admin1Bytes": 184131,
+      "admin1File": "admin1/IRN.json"
+    },
+    {
+      "iso2": "IQ",
+      "iso3": "IRQ",
+      "name": "Iraq",
+      "regions": 18,
+      "admin1Bytes": 45471,
+      "admin1File": "admin1/IRQ.json"
+    },
+    {
+      "iso2": "IE",
+      "iso3": "IRL",
+      "name": "Ireland",
+      "regions": 4,
+      "admin1Bytes": 58781,
+      "admin1File": "admin1/IRL.json"
+    },
+    {
+      "iso2": "IM",
+      "iso3": "IMN",
+      "name": "Isle of Man",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "IL",
+      "iso3": "ISR",
+      "name": "Israel",
+      "regions": 6,
+      "admin1Bytes": 9293,
+      "admin1File": "admin1/ISR.json"
+    },
+    {
+      "iso2": "IT",
+      "iso3": "ITA",
+      "name": "Italy",
+      "regions": 5,
+      "admin1Bytes": 78273,
+      "admin1File": "admin1/ITA.json"
+    },
+    {
+      "iso2": "CI",
+      "iso3": "CIV",
+      "name": "Ivory Coast",
+      "regions": 14,
+      "admin1Bytes": 70518,
+      "admin1File": "admin1/CIV.json"
+    },
+    {
+      "iso2": "JM",
+      "iso3": "JAM",
+      "name": "Jamaica",
+      "regions": 14,
+      "admin1Bytes": 11445,
+      "admin1File": "admin1/JAM.json"
+    },
+    {
+      "iso2": "JP",
+      "iso3": "JPN",
+      "name": "Japan",
+      "regions": 47,
+      "admin1Bytes": 294316,
+      "admin1File": "admin1/JPN.json"
+    },
+    {
+      "iso2": "JE",
+      "iso3": "JEY",
+      "name": "Jersey",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "JO",
+      "iso3": "JOR",
+      "name": "Jordan",
+      "regions": 12,
+      "admin1Bytes": 13954,
+      "admin1File": "admin1/JOR.json"
+    },
+    {
+      "iso2": "KZ",
+      "iso3": "KAZ",
+      "name": "Kazakhstan",
+      "regions": 16,
+      "admin1Bytes": 147299,
+      "admin1File": "admin1/KAZ.json"
+    },
+    {
+      "iso2": "KE",
+      "iso3": "KEN",
+      "name": "Kenya",
+      "regions": 47,
+      "admin1Bytes": 108718,
+      "admin1File": "admin1/KEN.json"
+    },
+    {
+      "iso2": "KI",
+      "iso3": "KIR",
+      "name": "Kiribati",
+      "regions": 3,
+      "admin1Bytes": 8553,
+      "admin1File": "admin1/KIR.json"
+    },
+    {
+      "iso2": "KW",
+      "iso3": "KWT",
+      "name": "Kuwait",
+      "regions": 6,
+      "admin1Bytes": 7320,
+      "admin1File": "admin1/KWT.json"
+    },
+    {
+      "iso2": "KG",
+      "iso3": "KGZ",
+      "name": "Kyrgyzstan",
+      "regions": 7,
+      "admin1Bytes": 48730,
+      "admin1File": "admin1/KGZ.json"
+    },
+    {
+      "iso2": "LA",
+      "iso3": "LAO",
+      "name": "Laos",
+      "regions": 18,
+      "admin1Bytes": 89778,
+      "admin1File": "admin1/LAO.json"
+    },
+    {
+      "iso2": "LV",
+      "iso3": "LVA",
+      "name": "Latvia",
+      "regions": 43,
+      "admin1Bytes": 89627,
+      "admin1File": "admin1/LVA.json"
+    },
+    {
+      "iso2": "LB",
+      "iso3": "LBN",
+      "name": "Lebanon",
+      "regions": 9,
+      "admin1Bytes": 13623,
+      "admin1File": "admin1/LBN.json"
+    },
+    {
+      "iso2": "LS",
+      "iso3": "LSO",
+      "name": "Lesotho",
+      "regions": 10,
+      "admin1Bytes": 31011,
+      "admin1File": "admin1/LSO.json"
+    },
+    {
+      "iso2": "LR",
+      "iso3": "LBR",
+      "name": "Liberia",
+      "regions": 15,
+      "admin1Bytes": 41935,
+      "admin1File": "admin1/LBR.json"
+    },
+    {
+      "iso2": "LY",
+      "iso3": "LBY",
+      "name": "Libya",
+      "regions": 22,
+      "admin1Bytes": 27678,
+      "admin1File": "admin1/LBY.json"
+    },
+    {
+      "iso2": "LI",
+      "iso3": "LIE",
+      "name": "Liechtenstein",
+      "regions": 11,
+      "admin1Bytes": 5255,
+      "admin1File": "admin1/LIE.json"
+    },
+    {
+      "iso2": "LT",
+      "iso3": "LTU",
+      "name": "Lithuania",
+      "regions": 10,
+      "admin1Bytes": 49435,
+      "admin1File": "admin1/LTU.json"
+    },
+    {
+      "iso2": "LU",
+      "iso3": "LUX",
+      "name": "Luxembourg",
+      "regions": 12,
+      "admin1Bytes": 10440,
+      "admin1File": "admin1/LUX.json"
+    },
+    {
+      "iso2": "MO",
+      "iso3": "MAC",
+      "name": "Macao S.A.R",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "MG",
+      "iso3": "MDG",
+      "name": "Madagascar",
+      "regions": 22,
+      "admin1Bytes": 138322,
+      "admin1File": "admin1/MDG.json"
+    },
+    {
+      "iso2": "MW",
+      "iso3": "MWI",
+      "name": "Malawi",
+      "regions": 3,
+      "admin1Bytes": 23673,
+      "admin1File": "admin1/MWI.json"
+    },
+    {
+      "iso2": "MY",
+      "iso3": "MYS",
+      "name": "Malaysia",
+      "regions": 16,
+      "admin1Bytes": 85732,
+      "admin1File": "admin1/MYS.json"
+    },
+    {
+      "iso2": "MV",
+      "iso3": "MDV",
+      "name": "Maldives",
+      "regions": 20,
+      "admin1Bytes": 6142,
+      "admin1File": "admin1/MDV.json"
+    },
+    {
+      "iso2": "ML",
+      "iso3": "MLI",
+      "name": "Mali",
+      "regions": 9,
+      "admin1Bytes": 54176,
+      "admin1File": "admin1/MLI.json"
+    },
+    {
+      "iso2": "MT",
+      "iso3": "MLT",
+      "name": "Malta",
+      "regions": 68,
+      "admin1Bytes": 18577,
+      "admin1File": "admin1/MLT.json"
+    },
+    {
+      "iso2": "MH",
+      "iso3": "MHL",
+      "name": "Marshall Islands",
+      "regions": 23,
+      "admin1Bytes": 9313,
+      "admin1File": "admin1/MHL.json"
+    },
+    {
+      "iso2": "MR",
+      "iso3": "MRT",
+      "name": "Mauritania",
+      "regions": 13,
+      "admin1Bytes": 34325,
+      "admin1File": "admin1/MRT.json"
+    },
+    {
+      "iso2": "MU",
+      "iso3": "MUS",
+      "name": "Mauritius",
+      "regions": 12,
+      "admin1Bytes": 7013,
+      "admin1File": "admin1/MUS.json"
+    },
+    {
+      "iso2": "MX",
+      "iso3": "MEX",
+      "name": "Mexico",
+      "regions": 32,
+      "admin1Bytes": 401176,
+      "admin1File": "admin1/MEX.json"
+    },
+    {
+      "iso2": "MD",
+      "iso3": "MDA",
+      "name": "Moldova",
+      "regions": 37,
+      "admin1Bytes": 64411,
+      "admin1File": "admin1/MDA.json"
+    },
+    {
+      "iso2": "MC",
+      "iso3": "MCO",
+      "name": "Monaco",
+      "regions": 1,
+      "admin1Bytes": 266,
+      "admin1File": "admin1/MCO.json"
+    },
+    {
+      "iso2": "MN",
+      "iso3": "MNG",
+      "name": "Mongolia",
+      "regions": 22,
+      "admin1Bytes": 111285,
+      "admin1File": "admin1/MNG.json"
+    },
+    {
+      "iso2": "ME",
+      "iso3": "MNE",
+      "name": "Montenegro",
+      "regions": 23,
+      "admin1Bytes": 22423,
+      "admin1File": "admin1/MNE.json"
+    },
+    {
+      "iso2": "MS",
+      "iso3": "MSR",
+      "name": "Montserrat",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "MA",
+      "iso3": "MAR",
+      "name": "Morocco",
+      "regions": 12,
+      "admin1Bytes": 68896,
+      "admin1File": "admin1/MAR.json"
+    },
+    {
+      "iso2": "MZ",
+      "iso3": "MOZ",
+      "name": "Mozambique",
+      "regions": 10,
+      "admin1Bytes": 70378,
+      "admin1File": "admin1/MOZ.json"
+    },
+    {
+      "iso2": "MM",
+      "iso3": "MMR",
+      "name": "Myanmar",
+      "regions": 14,
+      "admin1Bytes": 203950,
+      "admin1File": "admin1/MMR.json"
+    },
+    {
+      "iso2": "NA",
+      "iso3": "NAM",
+      "name": "Namibia",
+      "regions": 13,
+      "admin1Bytes": 42158,
+      "admin1File": "admin1/NAM.json"
+    },
+    {
+      "iso2": "NR",
+      "iso3": "NRU",
+      "name": "Nauru",
+      "regions": 14,
+      "admin1Bytes": 3617,
+      "admin1File": "admin1/NRU.json"
+    },
+    {
+      "iso2": "NP",
+      "iso3": "NPL",
+      "name": "Nepal",
+      "regions": 7,
+      "admin1Bytes": 50607,
+      "admin1File": "admin1/NPL.json"
+    },
+    {
+      "iso2": "NL",
+      "iso3": "NLD",
+      "name": "Netherlands",
+      "regions": 12,
+      "admin1Bytes": 25665,
+      "admin1File": "admin1/NLD.json"
+    },
+    {
+      "iso2": "NC",
+      "iso3": "NCL",
+      "name": "New Caledonia",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "NZ",
+      "iso3": "NZL",
+      "name": "New Zealand",
+      "regions": 17,
+      "admin1Bytes": 161956,
+      "admin1File": "admin1/NZL.json"
+    },
+    {
+      "iso2": "NI",
+      "iso3": "NIC",
+      "name": "Nicaragua",
+      "regions": 17,
+      "admin1Bytes": 46308,
+      "admin1File": "admin1/NIC.json"
+    },
+    {
+      "iso2": "NE",
+      "iso3": "NER",
+      "name": "Niger",
+      "regions": 6,
+      "admin1Bytes": 15103,
+      "admin1File": "admin1/NER.json"
+    },
+    {
+      "iso2": "NG",
+      "iso3": "NGA",
+      "name": "Nigeria",
+      "regions": 37,
+      "admin1Bytes": 148409,
+      "admin1File": "admin1/NGA.json"
+    },
+    {
+      "iso2": "NU",
+      "iso3": "NIU",
+      "name": "Niue",
+      "regions": 14,
+      "admin1Bytes": 4402,
+      "admin1File": "admin1/NIU.json"
+    },
+    {
+      "iso2": "NF",
+      "iso3": "NFK",
+      "name": "Norfolk Island",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "KP",
+      "iso3": "PRK",
+      "name": "North Korea",
+      "regions": 11,
+      "admin1Bytes": 61975,
+      "admin1File": "admin1/PRK.json"
+    },
+    {
+      "iso2": "MK",
+      "iso3": "MKD",
+      "name": "North Macedonia",
+      "regions": 8,
+      "admin1Bytes": 20225,
+      "admin1File": "admin1/MKD.json"
+    },
+    {
+      "iso2": "MP",
+      "iso3": "MNP",
+      "name": "Northern Mariana Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "NO",
+      "iso3": "NOR",
+      "name": "Norway",
+      "regions": 11,
+      "admin1Bytes": 391214,
+      "admin1File": "admin1/NOR.json"
+    },
+    {
+      "iso2": "OM",
+      "iso3": "OMN",
+      "name": "Oman",
+      "regions": 7,
+      "admin1Bytes": 21755,
+      "admin1File": "admin1/OMN.json"
+    },
+    {
+      "iso2": "PK",
+      "iso3": "PAK",
+      "name": "Pakistan",
+      "regions": 7,
+      "admin1Bytes": 50471,
+      "admin1File": "admin1/PAK.json"
+    },
+    {
+      "iso2": "PW",
+      "iso3": "PLW",
+      "name": "Palau",
+      "regions": 16,
+      "admin1Bytes": 7022,
+      "admin1File": "admin1/PLW.json"
+    },
+    {
+      "iso2": "PS",
+      "iso3": "PSE",
+      "name": "Palestine",
+      "regions": 2,
+      "admin1Bytes": 3387,
+      "admin1File": "admin1/PSE.json"
+    },
+    {
+      "iso2": "PA",
+      "iso3": "PAN",
+      "name": "Panama",
+      "regions": 13,
+      "admin1Bytes": 53923,
+      "admin1File": "admin1/PAN.json"
+    },
+    {
+      "iso2": "PG",
+      "iso3": "PNG",
+      "name": "Papua New Guinea",
+      "regions": 22,
+      "admin1Bytes": 156828,
+      "admin1File": "admin1/PNG.json"
+    },
+    {
+      "iso2": "PY",
+      "iso3": "PRY",
+      "name": "Paraguay",
+      "regions": 18,
+      "admin1Bytes": 83513,
+      "admin1File": "admin1/PRY.json"
+    },
+    {
+      "iso2": "PE",
+      "iso3": "PER",
+      "name": "Peru",
+      "regions": 25,
+      "admin1Bytes": 236352,
+      "admin1File": "admin1/PER.json"
+    },
+    {
+      "iso2": "PH",
+      "iso3": "PHL",
+      "name": "Philippines",
+      "regions": 17,
+      "admin1Bytes": 217535,
+      "admin1File": "admin1/PHL.json"
+    },
+    {
+      "iso2": "PN",
+      "iso3": "PCN",
+      "name": "Pitcairn Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "PL",
+      "iso3": "POL",
+      "name": "Poland",
+      "regions": 16,
+      "admin1Bytes": 122131,
+      "admin1File": "admin1/POL.json"
+    },
+    {
+      "iso2": "PT",
+      "iso3": "PRT",
+      "name": "Portugal",
+      "regions": 20,
+      "admin1Bytes": 66945,
+      "admin1File": "admin1/PRT.json"
+    },
+    {
+      "iso2": "PR",
+      "iso3": "PRI",
+      "name": "Puerto Rico",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "QA",
+      "iso3": "QAT",
+      "name": "Qatar",
+      "regions": 8,
+      "admin1Bytes": 9916,
+      "admin1File": "admin1/QAT.json"
+    },
+    {
+      "iso2": "RS",
+      "iso3": "SRB",
+      "name": "Republic of Serbia",
+      "regions": 25,
+      "admin1Bytes": 71037,
+      "admin1File": "admin1/SRB.json"
+    },
+    {
+      "iso2": "CG",
+      "iso3": "COG",
+      "name": "Republic of the Congo",
+      "regions": 12,
+      "admin1Bytes": 47710,
+      "admin1File": "admin1/COG.json"
+    },
+    {
+      "iso2": "RO",
+      "iso3": "ROU",
+      "name": "Romania",
+      "regions": 42,
+      "admin1Bytes": 160895,
+      "admin1File": "admin1/ROU.json"
+    },
+    {
+      "iso2": "RU",
+      "iso3": "RUS",
+      "name": "Russia",
+      "regions": 83,
+      "admin1Bytes": 2446192,
+      "admin1File": "admin1/RUS.json"
+    },
+    {
+      "iso2": "RW",
+      "iso3": "RWA",
+      "name": "Rwanda",
+      "regions": 5,
+      "admin1Bytes": 12592,
+      "admin1File": "admin1/RWA.json"
+    },
+    {
+      "iso2": "BL",
+      "iso3": "BLM",
+      "name": "Saint Barthelemy",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "SH",
+      "iso3": "SHN",
+      "name": "Saint Helena",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "KN",
+      "iso3": "KNA",
+      "name": "Saint Kitts and Nevis",
+      "regions": 14,
+      "admin1Bytes": 4555,
+      "admin1File": "admin1/KNA.json"
+    },
+    {
+      "iso2": "LC",
+      "iso3": "LCA",
+      "name": "Saint Lucia",
+      "regions": 10,
+      "admin1Bytes": 4488,
+      "admin1File": "admin1/LCA.json"
+    },
+    {
+      "iso2": "MF",
+      "iso3": "MAF",
+      "name": "Saint Martin",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "PM",
+      "iso3": "SPM",
+      "name": "Saint Pierre and Miquelon",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "VC",
+      "iso3": "VCT",
+      "name": "Saint Vincent and the Grenadines",
+      "regions": 6,
+      "admin1Bytes": 3350,
+      "admin1File": "admin1/VCT.json"
+    },
+    {
+      "iso2": "WS",
+      "iso3": "WSM",
+      "name": "Samoa",
+      "regions": 11,
+      "admin1Bytes": 7536,
+      "admin1File": "admin1/WSM.json"
+    },
+    {
+      "iso2": "SM",
+      "iso3": "SMR",
+      "name": "San Marino",
+      "regions": 9,
+      "admin1Bytes": 2630,
+      "admin1File": "admin1/SMR.json"
+    },
+    {
+      "iso2": "ST",
+      "iso3": "STP",
+      "name": "São Tomé and Principe",
+      "regions": 2,
+      "admin1Bytes": 1799,
+      "admin1File": "admin1/STP.json"
+    },
+    {
+      "iso2": "SA",
+      "iso3": "SAU",
+      "name": "Saudi Arabia",
+      "regions": 13,
+      "admin1Bytes": 103036,
+      "admin1File": "admin1/SAU.json"
+    },
+    {
+      "iso2": "SN",
+      "iso3": "SEN",
+      "name": "Senegal",
+      "regions": 14,
+      "admin1Bytes": 41300,
+      "admin1File": "admin1/SEN.json"
+    },
+    {
+      "iso2": "SC",
+      "iso3": "SYC",
+      "name": "Seychelles",
+      "regions": 26,
+      "admin1Bytes": 10077,
+      "admin1File": "admin1/SYC.json"
+    },
+    {
+      "iso2": "SL",
+      "iso3": "SLE",
+      "name": "Sierra Leone",
+      "regions": 4,
+      "admin1Bytes": 20204,
+      "admin1File": "admin1/SLE.json"
+    },
+    {
+      "iso2": "SG",
+      "iso3": "SGP",
+      "name": "Singapore",
+      "regions": 5,
+      "admin1Bytes": 4290,
+      "admin1File": "admin1/SGP.json"
+    },
+    {
+      "iso2": "SX",
+      "iso3": "SXM",
+      "name": "Sint Maarten",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "SK",
+      "iso3": "SVK",
+      "name": "Slovakia",
+      "regions": 8,
+      "admin1Bytes": 35104,
+      "admin1File": "admin1/SVK.json"
+    },
+    {
+      "iso2": "SI",
+      "iso3": "SVN",
+      "name": "Slovenia",
+      "regions": 2,
+      "admin1Bytes": 1637,
+      "admin1File": "admin1/SVN.json"
+    },
+    {
+      "iso2": "SB",
+      "iso3": "SLB",
+      "name": "Solomon Islands",
+      "regions": 10,
+      "admin1Bytes": 26335,
+      "admin1File": "admin1/SLB.json"
+    },
+    {
+      "iso2": "SO",
+      "iso3": "SOM",
+      "name": "Somalia",
+      "regions": 18,
+      "admin1Bytes": 21589,
+      "admin1File": "admin1/SOM.json"
+    },
+    {
+      "iso2": "ZA",
+      "iso3": "ZAF",
+      "name": "South Africa",
+      "regions": 9,
+      "admin1Bytes": 123517,
+      "admin1File": "admin1/ZAF.json"
+    },
+    {
+      "iso2": "GS",
+      "iso3": "SGS",
+      "name": "South Georgia and the Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "KR",
+      "iso3": "KOR",
+      "name": "South Korea",
+      "regions": 17,
+      "admin1Bytes": 53805,
+      "admin1File": "admin1/KOR.json"
+    },
+    {
+      "iso2": "SS",
+      "iso3": "SSD",
+      "name": "South Sudan",
+      "regions": 10,
+      "admin1Bytes": 27433,
+      "admin1File": "admin1/SSD.json"
+    },
+    {
+      "iso2": "ES",
+      "iso3": "ESP",
+      "name": "Spain",
+      "regions": 19,
+      "admin1Bytes": 144335,
+      "admin1File": "admin1/ESP.json"
+    },
+    {
+      "iso2": "LK",
+      "iso3": "LKA",
+      "name": "Sri Lanka",
+      "regions": 9,
+      "admin1Bytes": 33073,
+      "admin1File": "admin1/LKA.json"
+    },
+    {
+      "iso2": "SD",
+      "iso3": "SDN",
+      "name": "Sudan",
+      "regions": 19,
+      "admin1Bytes": 65370,
+      "admin1File": "admin1/SDN.json"
+    },
+    {
+      "iso2": "SR",
+      "iso3": "SUR",
+      "name": "Suriname",
+      "regions": 10,
+      "admin1Bytes": 23585,
+      "admin1File": "admin1/SUR.json"
+    },
+    {
+      "iso2": "SE",
+      "iso3": "SWE",
+      "name": "Sweden",
+      "regions": 21,
+      "admin1Bytes": 158543,
+      "admin1File": "admin1/SWE.json"
+    },
+    {
+      "iso2": "CH",
+      "iso3": "CHE",
+      "name": "Switzerland",
+      "regions": 26,
+      "admin1Bytes": 55658,
+      "admin1File": "admin1/CHE.json"
+    },
+    {
+      "iso2": "SY",
+      "iso3": "SYR",
+      "name": "Syria",
+      "regions": 14,
+      "admin1Bytes": 37071,
+      "admin1File": "admin1/SYR.json"
+    },
+    {
+      "iso2": null,
+      "iso3": "TWN",
+      "name": "Taiwan",
+      "regions": 22,
+      "admin1Bytes": 43085,
+      "admin1File": "admin1/TWN.json"
+    },
+    {
+      "iso2": "TJ",
+      "iso3": "TJK",
+      "name": "Tajikistan",
+      "regions": 5,
+      "admin1Bytes": 36436,
+      "admin1File": "admin1/TJK.json"
+    },
+    {
+      "iso2": "TH",
+      "iso3": "THA",
+      "name": "Thailand",
+      "regions": 77,
+      "admin1Bytes": 232277,
+      "admin1File": "admin1/THA.json"
+    },
+    {
+      "iso2": "BS",
+      "iso3": "BHS",
+      "name": "The Bahamas",
+      "regions": 32,
+      "admin1Bytes": 53876,
+      "admin1File": "admin1/BHS.json"
+    },
+    {
+      "iso2": "TG",
+      "iso3": "TGO",
+      "name": "Togo",
+      "regions": 5,
+      "admin1Bytes": 13361,
+      "admin1File": "admin1/TGO.json"
+    },
+    {
+      "iso2": "TO",
+      "iso3": "TON",
+      "name": "Tonga",
+      "regions": 5,
+      "admin1Bytes": 6095,
+      "admin1File": "admin1/TON.json"
+    },
+    {
+      "iso2": "TT",
+      "iso3": "TTO",
+      "name": "Trinidad and Tobago",
+      "regions": 14,
+      "admin1Bytes": 9870,
+      "admin1File": "admin1/TTO.json"
+    },
+    {
+      "iso2": "TN",
+      "iso3": "TUN",
+      "name": "Tunisia",
+      "regions": 24,
+      "admin1Bytes": 60257,
+      "admin1File": "admin1/TUN.json"
+    },
+    {
+      "iso2": "TR",
+      "iso3": "TUR",
+      "name": "Turkey",
+      "regions": 81,
+      "admin1Bytes": 332776,
+      "admin1File": "admin1/TUR.json"
+    },
+    {
+      "iso2": "TM",
+      "iso3": "TKM",
+      "name": "Turkmenistan",
+      "regions": 5,
+      "admin1Bytes": 18468,
+      "admin1File": "admin1/TKM.json"
+    },
+    {
+      "iso2": "TC",
+      "iso3": "TCA",
+      "name": "Turks and Caicos Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "TV",
+      "iso3": "TUV",
+      "name": "Tuvalu",
+      "regions": 6,
+      "admin1Bytes": 1449,
+      "admin1File": "admin1/TUV.json"
+    },
+    {
+      "iso2": "UG",
+      "iso3": "UGA",
+      "name": "Uganda",
+      "regions": 4,
+      "admin1Bytes": 40088,
+      "admin1File": "admin1/UGA.json"
+    },
+    {
+      "iso2": "UA",
+      "iso3": "UKR",
+      "name": "Ukraine",
+      "regions": 27,
+      "admin1Bytes": 198149,
+      "admin1File": "admin1/UKR.json"
+    },
+    {
+      "iso2": "AE",
+      "iso3": "ARE",
+      "name": "United Arab Emirates",
+      "regions": 7,
+      "admin1Bytes": 27474,
+      "admin1File": "admin1/ARE.json"
+    },
+    {
+      "iso2": "GB",
+      "iso3": "GBR",
+      "name": "United Kingdom",
+      "regions": 4,
+      "admin1Bytes": 64365,
+      "admin1File": "admin1/GBR.json"
+    },
+    {
+      "iso2": "TZ",
+      "iso3": "TZA",
+      "name": "United Republic of Tanzania",
+      "regions": 30,
+      "admin1Bytes": 95893,
+      "admin1File": "admin1/TZA.json"
+    },
+    {
+      "iso2": "UM",
+      "iso3": "UMI",
+      "name": "United States Minor Outlying Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "US",
+      "iso3": "USA",
+      "name": "United States of America",
+      "regions": 56,
+      "admin1Bytes": 872925,
+      "admin1File": "admin1/USA.json"
+    },
+    {
+      "iso2": "VI",
+      "iso3": "VIR",
+      "name": "United States Virgin Islands",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "UY",
+      "iso3": "URY",
+      "name": "Uruguay",
+      "regions": 19,
+      "admin1Bytes": 82593,
+      "admin1File": "admin1/URY.json"
+    },
+    {
+      "iso2": "UZ",
+      "iso3": "UZB",
+      "name": "Uzbekistan",
+      "regions": 14,
+      "admin1Bytes": 54201,
+      "admin1File": "admin1/UZB.json"
+    },
+    {
+      "iso2": "VU",
+      "iso3": "VUT",
+      "name": "Vanuatu",
+      "regions": 6,
+      "admin1Bytes": 20973,
+      "admin1File": "admin1/VUT.json"
+    },
+    {
+      "iso2": "VE",
+      "iso3": "VEN",
+      "name": "Venezuela",
+      "regions": 25,
+      "admin1Bytes": 150974,
+      "admin1File": "admin1/VEN.json"
+    },
+    {
+      "iso2": "VN",
+      "iso3": "VNM",
+      "name": "Vietnam",
+      "regions": 64,
+      "admin1Bytes": 135295,
+      "admin1File": "admin1/VNM.json"
+    },
+    {
+      "iso2": "WF",
+      "iso3": "WLF",
+      "name": "Wallis and Futuna",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "EH",
+      "iso3": "ESH",
+      "name": "Western Sahara",
+      "regions": 0,
+      "admin1Bytes": 0,
+      "admin1File": null
+    },
+    {
+      "iso2": "YE",
+      "iso3": "YEM",
+      "name": "Yemen",
+      "regions": 22,
+      "admin1Bytes": 58326,
+      "admin1File": "admin1/YEM.json"
+    },
+    {
+      "iso2": "ZM",
+      "iso3": "ZMB",
+      "name": "Zambia",
+      "regions": 10,
+      "admin1Bytes": 97870,
+      "admin1File": "admin1/ZMB.json"
+    },
+    {
+      "iso2": "ZW",
+      "iso3": "ZWE",
+      "name": "Zimbabwe",
+      "regions": 10,
+      "admin1Bytes": 67863,
+      "admin1File": "admin1/ZWE.json"
+    }
+  ],
+  "failures": [
+    {
+      "iso3": "AIA",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "ABW",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "ASM",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "ALA",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "ATA",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "ATF",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "BLM",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "BMU",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "CUW",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "COK",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "CYM",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "ESH",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "FLK",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "FRO",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "GGY",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "GIB",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "GUM",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "HMD",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "HKG",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "IMN",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "IOT",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "JEY",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "MAC",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "MAF",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "MNP",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "MSR",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "NCL",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "NFK",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "PCN",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "PRI",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "SGS",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "SPM",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "SXM",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "TCA",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "UMI",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "VGB",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "PYF",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "VIR",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "WLF",
+      "reason": "HTTP 404"
+    },
+    {
+      "iso3": "SHN",
+      "reason": "HTTP 404"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@map-draw/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Gera GeoJSON de países (Natural Earth/geo-countries) e divisões ADM1 (geoBoundaries gbOpen) para o Mapa Tático",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1",
+    "topojson-simplify": "^3.0.3"
+  }
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mock do mapa (teste de exportação)</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    /* Implementa o contrato window.__mapa usado pelo exportador:
+       ready(), loadScene(scene), setTime(t), getScene() e o evento 'frame-rendered' com detail.t. */
+    (function () {
+      var canvas = document.getElementById('c');
+      var ctx = canvas.getContext('2d');
+      var scene = null;
+      var t = 0;
+      var token = 0;
+
+      function resize() {
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        draw();
+      }
+
+      function draw() {
+        var w = canvas.width, h = canvas.height;
+        ctx.fillStyle = 'hsl(' + ((t * 40) % 360) + ', 80%, 50%)';
+        ctx.fillRect(0, 0, w, h);
+        // um retângulo que se move com o tempo, para os quadros serem diferentes entre si
+        ctx.fillStyle = '#fff';
+        var x = ((t / 3) % 1) * w;
+        ctx.fillRect(x, h * 0.4, w * 0.08, h * 0.2);
+        ctx.fillStyle = '#000';
+        ctx.font = Math.round(h * 0.08) + 'px sans-serif';
+        ctx.fillText('t=' + t.toFixed(3), w * 0.05, h * 0.15);
+      }
+
+      window.__mapa = {
+        ready: function () { return Promise.resolve(); },
+        loadScene: function (s) { scene = s; return Promise.resolve(); },
+        getScene: function () { return scene; },
+        setTime: function (v) {
+          t = v;
+          var my = ++token;
+          draw();
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              if (my !== token) return; // um setTime mais novo substituiu este
+              window.dispatchEvent(new CustomEvent('frame-rendered', { detail: { t: v } }));
+            });
+          });
+        }
+      };
+
+      window.addEventListener('resize', resize);
+      resize();
+    })();
+  </script>
+</body>
+</html>

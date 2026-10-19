@@ -1,17 +1,31 @@
-﻿# MAP-DRAW
+﻿# MAP-DRAW (Mapa Tático)
 
-Mapa Tático: ferramenta para desenhar movimentos de tropas, avanços e controle de territórios, com animação e exportação de vídeo.
+Ferramenta para desenhar movimentos militares, avanços e controle de territórios em mapas, com linha do tempo, bandeiras e exportação de vídeo.
 
-## Como abrir
+## Estrutura
 
-Abra `index.html` num navegador moderno (Chrome ou Edge). Precisa de internet para carregar as bibliotecas (D3, milsymbol) e o mapa de ruas, quando usado.
+```
+packages/shared/   contrato da cena (tipos) — usado por todos
+apps/web/          editor no navegador (TypeScript + Vite + MapLibre + deck.gl)
+apps/server/       API Node (Fastify): dados, cenas e servir o site
+apps/export/       exportador de vídeo (Playwright + ffmpeg, 30 fps)
+data/              scripts Node que preparam os contornos (países, regiões, bandeiras)
+```
 
-## Criar cenas
+## Requisitos
 
-1. **Novo mapa**: escolha País inteiro, Cidade/CEP, Modo livre ou Criar com IA.
-2. **Criar com IA**: clique em "Copiar instruções para IA", descreva o que aconteceu, copie o JSON que a IA devolver e cole em "Criar cena".
+- Node.js 20+ (LTS)
+- ffmpeg no PATH (para exportar vídeo)
 
-## Arquivos
+## Comandos (a definir conforme os apps forem criados)
 
-- `index.html`: a ferramenta inteira.
-- `countries.json`: países com coordenadas reais (fonte: datasets/geo-countries, Natural Earth).
+```
+npm install
+npm run dev -w apps/web
+npm run dev -w apps/server
+npm run export -w apps/export -- <arquivo-da-cena.json>
+```
+
+## Formato da cena
+
+Veja `packages/shared/src/scene.ts`. A cena é um JSON com o título, a data de início, a duração em horas, as forças, as unidades (com trajeto por instante), as setas, os eventos e o controle territorial.

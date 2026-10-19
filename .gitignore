@@ -1,0 +1,6 @@
+﻿node_modules/
+dist/
+storage/
+data/src/
+apps/web/dist/
+*.log

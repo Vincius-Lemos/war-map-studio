@@ -1,0 +1,28 @@
+{
+  "name": "@map-draw/export",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Exportador de vídeo do mapa tático (Playwright + ffmpeg)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "export": "tsx src/cli.ts",
+    "test": "node --import tsx --test test/export.test.ts",
+    "typecheck": "tsc --noEmit",
+    "bench": "tsx scripts/bench.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "playwright": "^1.64.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
