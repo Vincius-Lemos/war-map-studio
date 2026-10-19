@@ -479,12 +479,27 @@ const zoom = d3.zoom()
     world.attr('transform', e.transform);
     if(S.scene.mapType === 'tiles') scheduleBase();
     scheduleLabels();
+    scheduleFrame();
   });
 svg.call(zoom).on('dblclick.zoom', null);
 
 let baseTimer = null, labelTimer = null;
 const scheduleBase = () => { clearTimeout(baseTimer); baseTimer = setTimeout(drawBase, 140); };
 const scheduleLabels = () => { clearTimeout(labelTimer); labelTimer = setTimeout(renderLabels, 70); };
+let frameReq = 0;
+const scheduleFrame = () => { if(!frameReq) frameReq = requestAnimationFrame(() => { frameReq = 0; if(S.scene) renderFrame(); }); };
+/* quebra um texto em linhas de até `max` caracteres */
+function wrapText(text, max){
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = '';
+  for(const w of words){
+    const next = cur ? cur + ' ' + w : w;
+    if(next.length > max && cur){ lines.push(cur); cur = w; } else cur = next;
+  }
+  if(cur) lines.push(cur);
+  return lines.length ? lines : [''];
+}
 
 function fitRegion(){
   const b = S.scene.region;
@@ -754,11 +769,16 @@ function renderFrame(){
     if(!P) return;
     const k = clamp((t - e.t) / (e.dur || 3), 0, 1);
     const isNote = e.kind === 'note';
+    const zk = d3.zoomTransform(svg.node()).k;
     g.select('circle.pulse').attr('display', isNote ? 'none' : null).attr('cx', P[0]).attr('cy', P[1])
-      .attr('r', 12 + 40 * k).attr('opacity', 1 - k * 0.85);
-    g.select('circle.core').attr('cx', P[0]).attr('cy', P[1])
-      .attr('fill', isNote ? '#ffd54f' : '#ff3b30');
-    g.select('text.etxt').attr('x', P[0]).attr('y', P[1] - 46).text(e.text || '');
+      .attr('r', (12 + 40 * k) / zk).attr('stroke-width', 5 / zk).attr('opacity', 1 - k * 0.85);
+    g.select('circle.core').attr('cx', P[0]).attr('cy', P[1]).attr('r', 7 / zk)
+      .attr('stroke-width', 1.5 / zk).attr('fill', isNote ? '#ffd54f' : '#ff3b30');
+    const fs = 15 / zk, lines = wrapText(e.text, 30);
+    g.select('text.etxt').attr('x', P[0]).attr('y', P[1] - 30 / zk - (lines.length - 1) * fs * 1.2)
+      .attr('font-size', fs).attr('stroke-width', 4 / zk)
+      .selectAll('tspan').data(lines).join('tspan')
+      .attr('x', P[0]).attr('dy', (d, i) => i ? fs * 1.2 : 0).text(d => d);
   });
 
   drawUnits(t);
@@ -800,7 +820,11 @@ function drawUnits(t){
     })
     .on('end', () => { renderInspector(); renderTimeline(); saveSoon(); }));
   const all = en.merge(sel);
-  const scale = S.scene.unitSize;
+  // tamanho constante na tela: os símbolos e as fontes não crescem com o zoom
+  const zk = d3.zoomTransform(svg.node()).k;
+  const ss = S.scene.unitSize / zk;
+  const fs = 15 / zk;
+  const items = [];
   all.each(function(d){
     const u = d.u;
     const fac = facById(u.faction) || {color:'#888888', affil:'unknown'};
@@ -810,14 +834,28 @@ function drawUnits(t){
     g.attr('transform', `translate(${P[0].toFixed(1)},${P[1].toFixed(1)})`);
     const sym = g.select('.sym');
     if(sym.attr('data-k') !== info.key) sym.attr('data-k', info.key).html(info.markup);
-    sym.attr('transform', `scale(${scale})`);
-    const hh = info.h / 2 * scale;
+    sym.attr('transform', `scale(${ss})`);
+    const hh = info.h / 2 * ss;
     const selected = S.sel.kind === 'unit' && S.sel.id === u.id;
-    g.select('.ring').attr('r', 30 * scale).attr('display', selected ? null : 'none');
+    g.select('.ring').attr('r', 30 * ss).attr('stroke-width', 3 / zk).attr('display', selected ? null : 'none');
     const mark = ECH_MARK[u.echelon] || '';
-    g.select('.ech').attr('y', -hh - 6).text(mark).attr('display', mark ? null : 'none');
-    g.select('.lbl').attr('y', hh + 22).text(u.name).attr('display', S.scene.showLabels ? null : 'none');
+    g.select('.ech').attr('y', -hh - 5 / zk).attr('font-size', 13 / zk).attr('stroke-width', 3 / zk)
+      .text(mark).attr('display', mark ? null : 'none');
+    const ly = hh + 16 / zk;
+    const lbl = g.select('.lbl').attr('y', ly).attr('font-size', fs).attr('stroke-width', 4 / zk).text(u.name);
+    const w = u.name.length * fs * 0.6 / 2;
+    items.push({lbl, selected, ok: S.scene.showLabels,
+      box: {x0: P[0] - w, x1: P[0] + w, y0: P[1] + ly - fs * 0.85, y1: P[1] + ly + fs * 0.25}});
   });
+  // nomes: mostra só os que não colidem (a unidade selecionada tem prioridade)
+  items.sort((a, b) => b.selected - a.selected);
+  const placed = [];
+  for(const it of items){
+    const hit = placed.some(b => it.box.x0 < b.x1 && it.box.x1 > b.x0 && it.box.y0 < b.y1 && it.box.y1 > b.y0);
+    const show = it.ok && (it.selected || !hit);
+    it.lbl.attr('display', show ? null : 'none');
+    if(show) placed.push(it.box);
+  }
 }
 
 /* ---------------- seleção e modos ---------------- */
