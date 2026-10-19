@@ -65,6 +65,8 @@ Veja [CREDITS.md](CREDITS.md) para todas as bibliotecas, bases de dados, serviç
 
 ## Licença
 
-Distribuído sob a [licença MIT](LICENSE). Contribuições são bem-vindas: abra uma issue ou um pull request.
+Distribuído sob a [licença GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). Contribuições são bem-vindas: abra uma issue ou um pull request.
 
-A licença MIT cobre só o código deste projeto. Dados de terceiros mantêm as próprias licenças (veja [CREDITS.md](CREDITS.md)). Nenhum código de terceiro foi copiado dos projetos de inspiração; apenas ideias foram aproveitadas.
+Se você rodar uma versão modificada num servidor para outras pessoas usarem, a AGPL exige que você ofereça a elas o código-fonte modificado. Licenças comerciais, sem essas obrigações, estão disponíveis sob consulta.
+
+A AGPL cobre só o código deste projeto. Dados de terceiros mantêm as próprias licenças (veja [CREDITS.md](CREDITS.md)). Nenhum código de terceiro foi copiado dos projetos de inspiração; apenas ideias foram aproveitadas.

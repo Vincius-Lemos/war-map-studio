@@ -65,6 +65,8 @@ See [CREDITS.md](CREDITS.md) for every library, dataset, service and project tha
 
 ## License
 
-Released under the [MIT License](LICENSE). Contributions are welcome: open an issue or a pull request.
+Released under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). Contributions are welcome: open an issue or a pull request.
 
-The MIT license covers this project's code only. Third-party data keeps its own licenses (see [CREDITS.md](CREDITS.md)). No third-party code is copied from the inspiration projects; only ideas were taken from them.
+If you run a modified version on a server for others to use, the AGPL requires you to offer them that modified source code. Commercial licenses without these obligations are available on request.
+
+The AGPL covers this project's code only. Third-party data keeps its own licenses (see [CREDITS.md](CREDITS.md)). No third-party code is copied from the inspiration projects; only ideas were taken from them.
