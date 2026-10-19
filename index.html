@@ -985,7 +985,9 @@ function renderFlags(){
       const g = enter.append('g').attr('class', 'fl');
       g.append('path').attr('class', 'base');
       g.append('clipPath').append('path');
-      g.append('image').attr('preserveAspectRatio', 'xMidYMid slice');
+      g.append('image').attr('preserveAspectRatio', 'none');
+      g.append('path').attr('class', 'edge').attr('fill', 'none').attr('stroke', '#2b2620')
+        .attr('stroke-width', 1.2).attr('vector-effect', 'non-scaling-stroke').attr('pointer-events', 'none');
       return g;
     },
     update => update,
@@ -995,6 +997,7 @@ function renderFlags(){
     const d0 = pathGen(d.feat);
     const b = pathGen.bounds(d.feat);
     g.select('path.base').attr('d', d0).attr('fill', facColor(d.fac));
+    g.select('path.edge').attr('d', d0);
     g.select('clipPath').attr('id', 'clip_' + d.id);
     g.select('clipPath path').attr('d', d0);
     g.select('image').attr('href', d.src)
