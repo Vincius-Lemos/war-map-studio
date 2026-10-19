@@ -362,6 +362,7 @@ function normalize(s){
   s.events ??= [];
   s.overlay ??= null;
   s.orgFlags ??= [];
+  s.year ??= null;
   s.territories = (s.territories || []).filter(t => !t.sub);
   const LEGACY = {'440':'LT','428':'LV','616':'PL','112':'BY','233':'EE','643':'RU','804':'UA','276':'DE','250':'FR','076':'BR','032':'AR','858':'UY'};
   s.territories.forEach(t => { if(LEGACY[t.iso]) t.iso = LEGACY[t.iso]; });
@@ -456,6 +457,7 @@ const world = svg.append('g');
 const gBase = world.append('g');
 const gOverlay = world.append('g');
 const gLand = world.append('g');
+const gHist = world.append('g');
 const gFlags = world.append('g');
 const gSub = world.append('g');
 const gTrails = world.append('g');
@@ -619,18 +621,20 @@ function drawOverlay(){
 /* nomes dos países (e de estados, com zoom) visíveis na tela */
 function renderLabels(){
   gLabels.selectAll('*').remove();
-  if(S.scene.mapType !== 'country' || !landSel) return;
+  const histF = S.scene.year ? histCache.get(histYearFor(S.scene.year)) : null;
+  const list = histF || S.countries;
+  if((S.scene.mapType !== 'country' && !histF) || !landSel) return;
   const tr = d3.zoomTransform(svg.node());
   const inView = (x, y) => x >= 0 && x <= W && y >= 0 && y <= H;
   const items = [];
-  for(const f of S.countries){
+  for(const f of list){
     const c = proj(d3.geoCentroid(f));
     if(!c) continue;
     const [sx, sy] = tr.apply(c);
     const b = pathGen.bounds(f);
     const size = (b[1][0] - b[0][0]) * tr.k;
     if(!inView(sx, sy) || size < 26) continue;
-    items.push({text: f.properties.name, sx, sy, size, big: clamp(size / 9, 12, 20)});
+    items.push({text: f.properties.name || f.properties.NAME, sx, sy, size, big: clamp(size / 9, 12, 20)});
   }
   items.sort((a, b) => b.size - a.size).slice(0, 110).forEach(it => {
     gLabels.append('text')
@@ -1000,7 +1004,7 @@ function renderFlags(){
   ).each(function(d){
     const g = d3.select(this);
     const d0 = pathGen(d.feat);
-    const b = pathGen.bounds(d.feat);
+    const b = pathGen.bounds(mainPart(d.feat));
     g.select('path.base').attr('d', d0).attr('fill', d.fac ? facColor(d.fac) : LAND);
     g.select('path.edge').attr('d', d0);
     g.select('clipPath').attr('id', 'clip_' + d.id);
@@ -1010,6 +1014,64 @@ function renderFlags(){
       .attr('clip-path', `url(#clip_${d.id})`);
   });
 }
+/* parte principal do território (ignora ilhas e territórios ultramarinos ao enquadrar a bandeira) */
+function mainPart(feat){
+  const g = feat.geometry;
+  if(!g || g.type !== 'MultiPolygon') return feat;
+  let best = g.coordinates[0], ba = -1;
+  for(const p of g.coordinates){
+    const a = d3.geoArea({type: 'Polygon', coordinates: p});
+    if(a > ba){ ba = a; best = p; }
+  }
+  return {type: 'Feature', geometry: {type: 'Polygon', coordinates: best}};
+}
+
+/* ---------------- mapa histórico por ano ----------------
+   Usa os contornos históricos (aourednik/historical-basemaps). Quando o ano não existe
+   exatamente, usa o instantâneo mais próximo anterior. */
+const HIST_YEARS = [100,200,300,400,500,600,700,800,900,1000,1100,1200,1279,1300,1400,1492,1500,1530,1600,1650,1700,1715,1783,1800,1815,1878,1880,1900,1914,1920,1930,1938,1945,1960,1994,2000,2010];
+const histCache = new Map();
+const histYearFor = y => { let best = HIST_YEARS[0]; for(const h of HIST_YEARS) if(h <= y) best = h; return best; };
+const fixName = s => { try{ return decodeURIComponent(escape(String(s))); }catch(_){ return String(s); } };
+function histColor(name){ let h = 0; for(const c of String(name)) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h} 45% 62%)`; }
+async function loadHist(yr){
+  if(histCache.has(yr)) return histCache.get(yr);
+  histCache.set(yr, null);
+  try{
+    toast(`Carregando o mapa de ${yr}…`);
+    const r = await fetch(`https://raw.githubusercontent.com/aourednik/historical-basemaps/master/geojson/world_${yr}.geojson`);
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const gj = await r.json();
+    const feats = gj.features.filter(f => f.geometry).map(f => { f.properties.NAME = fixName(f.properties.NAME || f.properties.PARTOF || ''); return f; });
+    histCache.set(yr, feats);
+    refresh();
+    return feats;
+  }catch(err){
+    histCache.delete(yr);
+    toast('Não consegui carregar o mapa desse ano.', 'warn');
+    return null;
+  }
+}
+function renderHist(){
+  const y = S.scene.year;
+  gHist.attr('display', y ? null : 'none');
+  gLand.attr('display', y ? 'none' : null);
+  gFlags.attr('display', y ? 'none' : null);
+  if(!y) return;
+  const yr = histYearFor(y);
+  const feats = histCache.get(yr);
+  if(feats === undefined){ loadHist(yr); return; }
+  if(!feats) return;
+  gHist.selectAll('path').data(feats).join(enter => {
+    const p = enter.append('path');
+    p.append('title');
+    return p;
+  })
+    .attr('d', pathGen).attr('fill', d => histColor(d.properties.NAME)).attr('fill-opacity', 0.9)
+    .attr('stroke', '#3a3026').attr('stroke-width', 0.6).attr('vector-effect', 'non-scaling-stroke')
+    .each(function(d){ d3.select(this).select('title').text(`${d.properties.NAME} (${yr})`); });
+}
+
 function drawSubOutlines(){
   if(!landSel) return;
   gSub.selectAll('path').data(allSubFeatures(), d => d.properties.shapeID).join('path')
@@ -1281,6 +1343,8 @@ function sceneForm(){
     <div class="card-info"><b>${esc(mapTypeLabel)}</b><div class="muted small" style="margin-top:4px">Para trocar de escala, use “＋ Novo mapa”.</div></div>
     <label class="field"><span>Início da cena (data e hora)</span><input type="datetime-local" value="${sc.startDate}" data-kind="scene" data-field="startDate"></label>
     <div class="muted small" style="margin:-4px 0 6px">Com data, o relógio mostra dia e hora reais. Sem data, mostra horas corridas.</div>
+    <label class="field"><span>Ano do mapa (opcional, ex.: 1835)</span><input type="number" min="100" max="2010" step="1" value="${sc.year ?? ''}" placeholder="Vazio = mapa atual" data-kind="scene" data-field="year"></label>
+    <div class="muted small" style="margin:-4px 0 6px">${sc.year ? `Mapa de ${sc.year}: usando o instantâneo ${histYearFor(sc.year)}, o mais próximo anterior disponível.` : 'Mapa atual, com países reais e bandeiras.'}</div>
     <label class="field"><span>Duração (horas)</span><input type="number" min="1" step="1" value="${sc.durationH}" data-kind="scene" data-field="durationH"></label>
     <label class="field"><span>Estilo dos símbolos</span><select data-kind="scene" data-field="symbolStyle">${STYLES.map(([k, v]) => `<option value="${k}" ${sc.symbolStyle === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
     <label class="field"><span>Tamanho dos símbolos: ${sc.unitSize.toFixed(2)}×</span><input type="range" min="0.5" max="2.4" step="0.05" value="${sc.unitSize}" data-kind="scene" data-field="unitSize"></label>
@@ -1366,6 +1430,7 @@ function refresh(){
   drawBase();
   drawOverlay();
   drawSubOutlines();
+  renderHist();
   renderFrame();
   renderLabels();
   renderTimeline();
@@ -1448,6 +1513,7 @@ function applyField(kind, id, field, value, idx){
   else if(kind === 'scene'){
     if(field === 'showLabels' || field === 'showTrails' || field === 'showAllFlags') sc[field] = !!value;
     else if(field.startsWith('region.')){ setPath(sc, field, v); fitRegion(); }
+    else if(field === 'year') sc.year = value ? parseInt(value, 10) : null;
     else if(field === 'durationH') sc.durationH = clamp(v, 1, 2000);
     else if(field === 'symbolStyle'){ sc.symbolStyle = v; SYM.clear(); }
     else sc[field] = v;
