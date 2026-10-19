@@ -59,6 +59,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .row-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row-item .meta{color:var(--mut);font-size:11px;white-space:nowrap}
 .dot{width:12px;height:12px;border-radius:4px;border:1px solid #000;flex:none}
+.handle{width:18px;height:26px;border-radius:6px;border:1px solid #000;cursor:grab;display:grid;place-items:center;color:#000;font-size:12px;flex:none;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.handle:active{cursor:grabbing}
+#stage.dragover{outline:2px dashed var(--acc);outline-offset:-8px}
+[data-selfac]{gap:6px;padding:6px 7px}
+[data-selfac] input[type=text]{flex:1 1 60px}
+[data-selfac] select{width:78px;flex:none;padding:5px 4px}
+#stage.dragover #map{cursor:copy}
 .chip{display:inline-block;background:var(--panel3);border-radius:99px;padding:1px 8px;font-size:11px;color:var(--mut)}
 .search{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;margin-bottom:8px}
 input[type=text],input[type=number],input[type=datetime-local],select,textarea{background:var(--bg2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;width:100%;min-width:0}
@@ -922,7 +929,8 @@ function renderLeft(){
     <div class="body">
       ${sc.factions.map(f => `
         <div class="row-item ${S.selFaction === f.id ? 'on' : ''}" data-selfac="${f.id}">
-          <input type="color" value="${f.color}" data-field="color" data-kind="fac" data-id="${f.id}" title="Cor">
+          <span class="handle" draggable="true" data-dragfac="${f.id}" style="background:${f.color}" title="Arraste para um país ou unidade no mapa">⠿</span>
+          <input type="color" value="${f.color}" data-field="color" data-kind="fac" data-id="${f.id}" title="Trocar cor">
           <input type="text" value="${esc(f.name)}" data-field="name" data-kind="fac" data-id="${f.id}" style="flex:1;min-width:0">
           <select data-field="affil" data-kind="fac" data-id="${f.id}" title="Afiliação" style="width:88px">
             ${AFFIL.map(([k, v]) => `<option value="${k}" ${f.affil === k ? 'selected' : ''}>${k === 'friend' ? 'Amigo' : k === 'hostile' ? 'Inimigo' : k === 'neutral' ? 'Neutro' : '?'}</option>`).join('')}
@@ -1346,6 +1354,74 @@ function runAct(a, el){
     case 'rmov': S.scene.overlay = null; refresh(); break;
   }
 }
+
+/* ---------------- arrastar cores das forças para o mapa ----------------
+   Arraste a alça colorida de uma força e solte sobre um país (pinta o país)
+   ou sobre uma unidade (a unidade passa para essa força). */
+function dropTarget(e){
+  const ue = e.target.closest && e.target.closest('g.unit');
+  if(ue){
+    const d = d3.select(ue).datum();
+    if(d) return {kind: 'unit', id: d.u.id, label: `Solte em: ${d.u.name}`};
+  }
+  if(S.scene.mapType === 'tiles') return {kind: null, label: 'Mapa de ruas: solte sobre uma unidade'};
+  const ll = proj.invert(d3.pointer(e, world.node()));
+  const f = ll && countryAt(ll[0], ll[1]);
+  if(f) return {kind: 'country', iso: isoOf(f), name: f.properties.name, label: `Pintar: ${f.properties.name}`};
+  return {kind: null, label: 'Solte sobre um país ou uma unidade'};
+}
+document.addEventListener('dragstart', e => {
+  const h = e.target.closest && e.target.closest('[data-dragfac]');
+  if(!h) return;
+  const fid = h.dataset.dragfac;
+  S.dragFac = fid;
+  e.dataTransfer.setData('text/plain', fid);
+  e.dataTransfer.effectAllowed = 'copy';
+  const f = facById(fid);
+  if(f){
+    const ghost = document.createElement('div');
+    ghost.textContent = f.name;
+    ghost.style.cssText = `position:fixed;top:-200px;left:-200px;padding:6px 12px;border-radius:99px;background:${f.color};color:#fff;font-weight:700;font:700 13px system-ui`;
+    document.body.append(ghost);
+    e.dataTransfer.setDragImage(ghost, 12, 12);
+    setTimeout(() => ghost.remove(), 0);
+  }
+  $('#stage').classList.add('dragover');
+});
+document.addEventListener('dragend', () => {
+  S.dragFac = null;
+  $('#stage').classList.remove('dragover');
+  renderHint();
+});
+const stageEl = $('#stage');
+stageEl.addEventListener('dragover', e => {
+  if(!S.dragFac) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  const tg = dropTarget(e);
+  $('#hint').textContent = tg.label;
+});
+stageEl.addEventListener('drop', e => {
+  const fid = e.dataTransfer.getData('text/plain') || S.dragFac;
+  if(!fid) return;
+  e.preventDefault();
+  const tg = dropTarget(e);
+  if(tg.kind === 'unit'){
+    const u = unitById(tg.id);
+    if(u){
+      u.faction = fid;
+      S.selFaction = fid;
+      SYM.clear();
+      toast(`${u.name} agora é de ${facName(fid)}.`, 'ok');
+      refresh();
+    }
+  } else if(tg.kind === 'country'){
+    S.selFaction = fid;
+    setTerritory(tg.iso, tg.name, fid);
+  } else {
+    toast(tg.label, 'warn');
+  }
+});
 
 /* ---------------- tela inicial ---------------- */
 function wizOpen(){ $('#wiz').hidden = false; wizShowStep1(); }
