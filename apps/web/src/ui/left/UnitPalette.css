@@ -1,122 +1,248 @@
-/* Paleta de unidades (painel esquerdo, seção Unidades) e fantasma de colocação. Cores vêm dos tokens de styles.css. */
+/* Biblioteca de unidades (painel esquerdo, seção Unidades) e fantasma de colocação. Cores vêm dos tokens de styles.css. */
 
-.uplace {
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--bg2);
-  padding: 8px;
-  margin-bottom: 8px;
+/* Biblioteca flutuante, ao lado do painel esquerdo: fica sobre o mapa e não é espremida pela coluna. */
+.ulib {
+  position: fixed;
+  left: 288px;
+  top: 64px;
+  width: 500px;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+  z-index: 45;
+  border: 1px solid #2d3b50;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--panel2), var(--bg2));
+  padding: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
 
-.uplace-head {
+.ulib-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
   min-width: 0;
 }
 
-.uplace-swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+.ulib-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
   flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px currentColor;
 }
 
-.uplace-force {
+.ulib-force {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--txt);
 }
 
-.uplace-ech {
-  max-width: 128px;
-  font-size: 12px;
-}
-
-.uplace-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
-}
-
-.uplace-item {
-  position: relative;
+/* Pré-visualização grande da unidade escolhida. */
+.ulib-preview {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 4px 8px;
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  color: var(--txt);
-  cursor: grab;
-  text-align: left;
-  font: inherit;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 30% 20%, #1d3350, #0d1520 70%);
+  border: 1px solid #23364f;
+  margin-bottom: 10px;
 }
 
-.uplace-item:hover {
-  border-color: #3d4b5f;
+.ulib-preview-sym {
+  width: 72px;
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.ulib-preview-sym svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ulib-preview-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ulib-preview-txt b {
+  font-size: 14px;
+}
+
+/* Escalão em botões segmentados. */
+.ulib-ech {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 3px;
+  background: var(--bg);
+  border-radius: 9px;
+  border: 1px solid var(--line);
+}
+
+.ulib-ech-btn {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 5px 0;
+  color: var(--mut);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+}
+
+.ulib-ech-btn:hover {
+  color: var(--txt);
   background: var(--panel3);
 }
 
-.uplace-item.on {
+.ulib-ech-btn.on {
+  background: var(--acc2);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(59, 156, 255, 0.45);
+}
+
+/* Abas de categoria. */
+.ulib-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ulib-tab {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 3px 9px;
+  color: var(--mut);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.ulib-tab.on {
   border-color: var(--acc);
+  color: var(--txt);
   background: #15263d;
 }
 
-.uplace-sym {
-  flex: none;
-  width: 40px;
-  height: 28px;
+.ulib-search {
+  width: 100%;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+/* Grade de cartões grandes, no estilo de jogos de estratégia. */
+.ulib-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 2px;
+}
+
+.ulib-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  background: linear-gradient(180deg, var(--panel3), var(--panel));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--txt);
+  cursor: grab;
+  font: inherit;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.ulib-card:hover {
+  border-color: #4a5d78;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.ulib-card:active {
+  cursor: grabbing;
+}
+
+.ulib-card.on {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 1px var(--acc), 0 0 16px rgba(59, 156, 255, 0.4);
+  background: linear-gradient(180deg, #1b3558, #0f1d30);
+}
+
+.ulib-card-sym {
+  width: 72px;
+  height: 54px;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
 }
 
-.uplace-sym svg {
+.ulib-card-sym svg {
   width: 100%;
   height: 100%;
 }
 
-.uplace-lbl {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  line-height: 1.2;
+.ulib-card-lbl {
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--mut);
+  min-height: 26px;
 }
 
-.uplace-item kbd {
-  flex: none;
-  background: var(--panel3);
+.ulib-card.on .ulib-card-lbl {
+  color: var(--txt);
+}
+
+/* Número do atalho no canto do cartão. */
+.ulib-key {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  background: var(--bg);
+  border: 1px solid var(--line);
   border-radius: 4px;
-  padding: 0 5px;
+  padding: 0 4px;
   font-size: 10px;
   color: var(--mut);
 }
 
-.uplace-status {
+.ulib-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-top: 8px;
-  padding: 6px 8px;
-  border-radius: 7px;
+  padding: 7px 9px;
+  border-radius: 8px;
   background: #15263d;
   border: 1px solid var(--acc2);
   font-size: 12px;
   color: var(--txt);
 }
 
-.uplace-status kbd {
+.ulib-status kbd {
   background: var(--panel3);
   border-radius: 4px;
   padding: 0 4px;
@@ -124,12 +250,12 @@
   color: var(--mut);
 }
 
-.uplace-help {
+.ulib-help {
   margin: 8px 0 0;
 }
 
 /* Fantasma: segue o cursor sobre o mapa. Não captura cliques. */
-.uplace-ghost {
+.ulib-ghost {
   position: fixed;
   left: 0;
   top: 0;
@@ -139,13 +265,13 @@
   border: 2px solid var(--acc);
   border-radius: 6px;
   background: rgba(11, 15, 20, 0.55);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
-.uplace-ghost svg {
+.ulib-ghost svg {
   display: block;
-  width: 40px;
-  height: 30px;
+  width: 44px;
+  height: 32px;
 }
 
 /* Cursor de mira enquanto se coloca uma unidade. */
