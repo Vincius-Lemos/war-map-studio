@@ -969,9 +969,14 @@ function renderFlags(){
   if(!landSel) return;
   const ctrl = controlAt(S.t), subs = subControlAt(S.t);
   const items = [];
-  for(const [iso, e] of ctrl){
-    const f = S.countries.find(c => isoOf(c) === iso);
-    if(f) items.push({id: 'c_' + safeId(iso), feat: f, fac: e.faction, src: flagSrc(e.flag, iso)});
+  const showAll = S.scene.mapType === 'country' && S.scene.showAllFlags !== false;
+  for(const f of S.countries){
+    const iso = isoOf(f);
+    const e = ctrl.get(iso);
+    if(!showAll && !e) continue;
+    const src = e ? flagSrc(e.flag, iso) : flagUrlOf(iso);
+    if(!src) continue;
+    items.push({id: 'c_' + safeId(iso), feat: f, fac: e && e.faction, src});
   }
   for(const [key, e] of subs){
     const feat = subFeature(key);
@@ -996,7 +1001,7 @@ function renderFlags(){
     const g = d3.select(this);
     const d0 = pathGen(d.feat);
     const b = pathGen.bounds(d.feat);
-    g.select('path.base').attr('d', d0).attr('fill', facColor(d.fac));
+    g.select('path.base').attr('d', d0).attr('fill', d.fac ? facColor(d.fac) : LAND);
     g.select('path.edge').attr('d', d0);
     g.select('clipPath').attr('id', 'clip_' + d.id);
     g.select('clipPath path').attr('d', d0);
@@ -1281,6 +1286,7 @@ function sceneForm(){
     <label class="field"><span>Tamanho dos símbolos: ${sc.unitSize.toFixed(2)}×</span><input type="range" min="0.5" max="2.4" step="0.05" value="${sc.unitSize}" data-kind="scene" data-field="unitSize"></label>
     <label class="field inline"><input type="checkbox" ${sc.showLabels ? 'checked' : ''} data-kind="scene" data-field="showLabels"><span>Mostrar nomes das unidades</span></label>
     <label class="field inline"><input type="checkbox" ${sc.showTrails ? 'checked' : ''} data-kind="scene" data-field="showTrails"><span>Mostrar rastros</span></label>
+    <label class="field inline"><input type="checkbox" ${sc.showAllFlags !== false ? 'checked' : ''} data-kind="scene" data-field="showAllFlags"><span>Bandeira de todos os países</span></label>
     <div class="h">Área do mapa (graus)</div>
     <div class="grid2">
       <label class="field"><span>Oeste (lon)</span><input type="number" step="0.01" value="${sc.region.lon0}" data-kind="scene" data-field="region.lon0"></label>
@@ -1440,7 +1446,7 @@ function applyField(kind, id, field, value, idx){
   else if(kind === 'event'){ const e = eventById(id); if(e) setPath(e, field, v); }
   else if(kind === 'fac'){ const f = facById(id); if(f){ f[field] = v; SYM.clear(); } }
   else if(kind === 'scene'){
-    if(field === 'showLabels' || field === 'showTrails') sc[field] = !!value;
+    if(field === 'showLabels' || field === 'showTrails' || field === 'showAllFlags') sc[field] = !!value;
     else if(field.startsWith('region.')){ setPath(sc, field, v); fitRegion(); }
     else if(field === 'durationH') sc.durationH = clamp(v, 1, 2000);
     else if(field === 'symbolStyle'){ sc.symbolStyle = v; SYM.clear(); }
