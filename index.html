@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mapa Tático</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/milsymbol@2.2.0/dist/milsymbol.js"></script>
 <style>
 :root{--bg:#11151a;--panel:#1a2029;--panel2:#202836;--line:#2c3644;--txt:#e6ebf2;--mut:#8c99ab;--acc:#4ea1ff;--warn:#ff5b4f}
@@ -1442,8 +1443,14 @@ async function init(){
   $('#title').value = S.scene.title;
   status('Carregando mapa...');
   try{
-    const geo = await d3.json('countries.json');
-    S.countries = geo.features.map(f => { f.properties['hc-a2'] = f.properties.iso2; return f; });
+    const [topo, codes] = await Promise.all([
+      d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json'),
+      d3.json('https://cdn.jsdelivr.net/npm/i18n-iso-countries@7.14.0/codes.json'),
+    ]);
+    const toA2 = Object.fromEntries(codes.map(c => [c[2], c[0]]));
+    S.countries = topojson.feature(topo, topo.objects.countries).features
+      .filter(f => f.properties.name !== 'Antarctica')
+      .map(f => { f.properties['hc-a2'] = toA2[String(f.id).padStart(3, '0')] || ''; return f; });
   }catch(err){
     status('Não consegui carregar o mapa (sem internet?)');
     return;
