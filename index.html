@@ -952,8 +952,10 @@ svg.on('click', onMapClick);
    também mostra a bandeira do país, a menos que você escolha uma bandeira de organização. */
 const ISO3 = {};
 const flagUrlOf = code => code ? `https://flagcdn.com/${String(code).toLowerCase()}.svg` : '';
-function flagSrc(entryFlag, iso){
-  if(entryFlag){ const o = (S.scene.orgFlags || []).find(x => x.id === entryFlag); if(o) return o.src; }
+/* bandeira de um território: a de organização escolhida, senão a do país da força que o pintou, senão a do próprio país */
+function flagSrc(e, iso){
+  if(e && e.flag){ const o = (S.scene.orgFlags || []).find(x => x.id === e.flag); if(o) return o.src; }
+  if(e && e.fcode) return flagUrlOf(e.fcode);
   return flagUrlOf(iso);
 }
 const safeId = s => String(s).replace(/[^A-Za-z0-9_-]/g, '_');
@@ -978,13 +980,17 @@ function renderFlags(){
     const iso = isoOf(f);
     const e = ctrl.get(iso);
     if(!showAll && !e) continue;
-    const src = e ? flagSrc(e.flag, iso) : flagUrlOf(iso);
+    const src = e ? flagSrc(e, iso) : flagUrlOf(iso);
     if(!src) continue;
     items.push({id: 'c_' + safeId(iso), feat: f, fac: e && e.faction, src});
   }
-  for(const [key, e] of subs){
-    const feat = subFeature(key);
-    if(feat) items.push({id: 's_' + safeId(key), feat, fac: e.faction, src: flagSrc(e.flag, e.iso)});
+  /* cada estado/província carrega a sua bandeira; os pintados mostram a bandeira de quem os controla */
+  if(S.scene.mapType === 'country') for(const feat of allSubFeatures()){
+    const key = feat.properties.shapeID;
+    const e = subs.get(key);
+    if(!e && S.scene.showAllFlags === false) continue;
+    const src = flagSrc(e, feat.properties.iso);
+    if(src) items.push({id: 's_' + safeId(key), feat, fac: e && e.faction, src});
   }
   const k = items.map(i => i.id + '|' + i.src + '|' + i.fac).join(',');
   if(k === flagKey) return;
@@ -1014,6 +1020,36 @@ function renderFlags(){
       .attr('clip-path', `url(#clip_${d.id})`);
   });
 }
+/* cada parte do território (continente, ilhas, exclaves) recebe a sua própria bandeira,
+   encaixada na própria área: nada repete e exclaves como Kaliningrado também aparecem */
+function countryParts(feat){
+  const g = feat.geometry;
+  const polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
+  const out = [];
+  for(const p of polys){
+    const lons = p[0].map(c => c[0]);
+    if(Math.max(...lons) - Math.min(...lons) > 90) continue; // faixa que cruza o meridiano 180
+    const area = d3.geoArea({type: 'Polygon', coordinates: p});
+    if(area < 1e-5) continue; // ilhotas pequenas demais para receber bandeira
+    out.push({area, feat: {type: 'Feature', geometry: {type: 'Polygon', coordinates: p}}});
+  }
+  if(!out.length && polys.length) out.push({area: 0, feat: {type: 'Feature', geometry: {type: 'Polygon', coordinates: polys[0]}}});
+  out.sort((a, b) => b.area - a.area);
+  return out.slice(0, 60).map(o => o.feat);
+}
+
+/* corrige a orientação dos anéis: um anel invertido vira "o resto do mundo" e estoura o enquadramento */
+function orient(f){
+  const g = f.geometry;
+  const polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
+  for(const p of polys){
+    if(d3.geoArea({type: 'Polygon', coordinates: p}) > 2 * Math.PI){
+      for(let i = 0; i < p.length; i++) p[i] = p[i].slice().reverse();
+    }
+  }
+  return f;
+}
+
 /* parte principal do território (ignora ilhas e territórios ultramarinos ao enquadrar a bandeira) */
 function mainPart(feat){
   const g = feat.geometry;
@@ -1085,11 +1121,15 @@ async function ensureAdmin1(iso){
   if(!iso3){ S.admin1.set(iso, []); return []; }
   toast('Carregando regiões…');
   try{
-    const meta = await (await fetch(`https://www.geoboundaries.org/api/current/gbOpen/${iso3}/ADM1/`)).json();
-    const r = await fetch(String(meta.simplifiedGeometryGeoJSON).replace(/\s/g, ''));
+    /* primeiro o arquivo local do próprio site (mesma origem, sem CORS); se não existir, a fonte geoBoundaries */
+    let r = await fetch(`geo/${iso3}.geojson`);
+    if(!r.ok){
+      const meta = await (await fetch(`https://www.geoboundaries.org/api/current/gbOpen/${iso3}/ADM1/`)).json();
+      r = await fetch(String(meta.simplifiedGeometryGeoJSON).replace(/\s/g, ''));
+    }
     if(!r.ok) throw new Error('geometria indisponível');
     const gj = await r.json();
-    const feats = gj.features.map((f, i) => { f.properties.shapeID ??= `${iso3}-${i}`; return f; });
+    const feats = gj.features.map((f, i) => { f.properties.shapeID ??= `${iso3}-${i}`; f.properties.iso = iso; return orient(f); });
     S.admin1.set(iso, feats);
     flagKey = '';
     drawSubOutlines();
@@ -1114,6 +1154,8 @@ function setSubTerritory(st, iso, countryName, fid){
   S.scene.territories = S.scene.territories.filter(e => !(e.sub === key && Math.abs(e.t - t) < 0.02));
   const entry = {iso, sub: key, name: `${st.properties.shapeName} (${countryName})`, t, faction: fid};
   if(S.paintFlag) entry.flag = S.paintFlag;
+  const fc = facById(fid)?.flag;
+  if(fc) entry.fcode = fc;
   S.scene.territories.push(entry);
   S.flagKey = '';
   toast(`${entry.name}: ${facName(fid)} a partir de ${clockParts(t).main}.`, 'ok');
@@ -1148,6 +1190,8 @@ function setTerritory(iso, name, faction){
   S.scene.territories = S.scene.territories.filter(e => !(!e.sub && e.iso === iso && Math.abs(e.t - t) < 0.02));
   const entry = {iso, name, t, faction};
   if(S.paintFlag) entry.flag = S.paintFlag;
+  const fc = facById(faction)?.flag;
+  if(fc) entry.fcode = fc;
   S.scene.territories.push(entry);
   S.ctrlKey = '';
   toast(`${name}: ${facName(faction)} a partir de ${clockParts(t).main}.`, 'ok');
@@ -1183,6 +1227,10 @@ function renderLeft(){
           <input type="text" value="${esc(f.name)}" data-field="name" data-kind="fac" data-id="${f.id}" style="flex:1;min-width:0">
           <select data-field="affil" data-kind="fac" data-id="${f.id}" title="Afiliação" style="width:88px">
             ${AFFIL.map(([k, v]) => `<option value="${k}" ${f.affil === k ? 'selected' : ''}>${k === 'friend' ? 'Amigo' : k === 'hostile' ? 'Inimigo' : k === 'neutral' ? 'Neutro' : '?'}</option>`).join('')}
+          </select>
+          <select data-field="flag" data-kind="fac" data-id="${f.id}" title="Bandeira do país desta força (usada quando ela pinta um estado)" style="width:74px">
+            <option value="">sem bandeira</option>
+            ${S.countries.slice().sort((a, b) => a.properties.name.localeCompare(b.properties.name)).map(c => `<option value="${isoOf(c)}" ${f.flag === isoOf(c) ? 'selected' : ''}>${esc(c.properties.name)}</option>`).join('')}
           </select>
           <button class="btn icon sm ghost" data-act="delfac" data-id="${f.id}" title="Remover força">✕</button>
         </div>`).join('')}
