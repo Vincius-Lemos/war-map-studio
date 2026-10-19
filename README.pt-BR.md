@@ -65,4 +65,6 @@ Veja [CREDITS.md](CREDITS.md) para todas as bibliotecas, bases de dados, serviç
 
 ## Licença
 
-A definir pelo autor antes de publicar. Nenhum código de terceiro foi copiado dos projetos de inspiração listados em CREDITS.md; apenas ideias foram aproveitadas.
+Distribuído sob a [licença MIT](LICENSE). Contribuições são bem-vindas: abra uma issue ou um pull request.
+
+A licença MIT cobre só o código deste projeto. Dados de terceiros mantêm as próprias licenças (veja [CREDITS.md](CREDITS.md)). Nenhum código de terceiro foi copiado dos projetos de inspiração; apenas ideias foram aproveitadas.

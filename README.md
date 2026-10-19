@@ -65,4 +65,6 @@ See [CREDITS.md](CREDITS.md) for every library, dataset, service and project tha
 
 ## License
 
-To be defined by the author before public release. No third-party code is copied from the inspiration projects listed in CREDITS.md; only ideas were taken from them.
+Released under the [MIT License](LICENSE). Contributions are welcome: open an issue or a pull request.
+
+The MIT license covers this project's code only. Third-party data keeps its own licenses (see [CREDITS.md](CREDITS.md)). No third-party code is copied from the inspiration projects; only ideas were taken from them.
