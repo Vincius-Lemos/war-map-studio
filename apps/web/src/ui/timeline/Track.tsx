@@ -11,17 +11,27 @@ interface Props {
   onSeek: (t: number) => void;
 }
 
-/* Trilho: barra de progresso, marcas dos instantes-chave (eventos em vermelho) e rótulos de hora. */
+/* Trilho: barra de progresso, marcas dos instantes-chave (eventos em vermelho) e rótulos de hora.
+   Com zoom (régua), mostra só uma janela da cena que acompanha o instante atual. */
 export function Track({ scene, t, keys, onSeek }: Props) {
   const dur = scene.durationH;
-  const pct = (v: number) => ((v / dur) * 100).toFixed(3) + '%';
-  const eventTimes = new Set(scene.events.map((e) => Math.round(e.t * 100)));
+  const zoom = useRuler((s) => s.zoom);
   const chosen = useRuler((s) => s.step);
-  /* passo escolhido pelo usuário, ou o automático; nunca abaixo do que cabe em MAX_TICKS */
-  const step = Math.max(chosen || tickStep(dur), dur / MAX_TICKS);
+  /* janela visível: tamanho dur/zoom, centrada no instante atual e presa às bordas da cena */
+  const span = dur / zoom;
+  const start = Math.min(Math.max(0, t - span / 2), Math.max(0, dur - span));
+  const end = start + span;
+  const pct = (v: number) => (((v - start) / span) * 100).toFixed(3) + '%';
+  const inView = (v: number) => v >= start - 1e-9 && v <= end + 1e-9;
+
+  const eventTimes = new Set(scene.events.map((e) => Math.round(e.t * 100)));
+  /* passo escolhido pelo usuário, se couber na janela; senão o automático da janela.
+     Nunca abaixo do que cabe em MAX_TICKS. */
+  const pick = chosen && chosen <= span ? chosen : tickStep(span);
+  const step = Math.max(pick, span / MAX_TICKS);
   const dayLabels = step >= 24;
   const ticks: number[] = [];
-  for (let x = 0; x <= dur + 0.001; x += step) ticks.push(x);
+  for (let x = Math.ceil(start / step) * step; x <= end + 1e-9; x += step) ticks.push(x);
   /* com muitas marcas, mostra um rótulo a cada N para não se sobreporem (as marcas continuam) */
   const labelEvery = ticks.length > 30 ? Math.ceil(ticks.length / 24) : 1;
 
@@ -31,7 +41,7 @@ export function Track({ scene, t, keys, onSeek }: Props) {
         <div className="rail" />
         <div className="fill" style={{ width: pct(t) }} />
         <div className="marks">
-          {keys.map((k) => {
+          {keys.filter(inView).map((k) => {
             const isEvent = eventTimes.has(Math.round(k * 100));
             return (
               <button
@@ -47,10 +57,10 @@ export function Track({ scene, t, keys, onSeek }: Props) {
         </div>
         <input
           type="range"
-          min={0}
-          max={dur}
+          min={start}
+          max={end}
           step={0.01}
-          value={t}
+          value={Math.min(end, Math.max(start, t))}
           onChange={(e) => onSeek(Number(e.target.value))}
           aria-label="Linha do tempo"
         />

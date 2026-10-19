@@ -24,12 +24,20 @@ function readStep(): number {
   }
 }
 
+/* Zoom da régua (como o zoom da linha do tempo do After Effects): 1 = cena inteira; maior = janela menor.
+   Não é persistido: começa sempre em 1×. */
+export const RULER_ZOOM_MAX = 40;
+
 interface RulerState {
   step: number;
   setStep: (hours: number) => void;
+  zoom: number;
+  setZoom: (z: number) => void;
 }
 
 export const useRuler = create<RulerState>()((set) => ({
+  zoom: 1,
+  setZoom: (z) => set({ zoom: Math.min(RULER_ZOOM_MAX, Math.max(1, Number.isFinite(z) ? z : 1)) }),
   step: readStep(),
   setStep: (step) => {
     try {

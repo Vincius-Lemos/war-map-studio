@@ -2,12 +2,14 @@ import { useMemo } from 'react';
 import { clockParts, keyframes, SPEEDS } from '@map-draw/shared';
 import { useStore } from '../../state/store.ts';
 import { Track } from './Track.tsx';
-import { RULER_STEPS, useRuler } from './rulerStore.ts';
+import { RULER_STEPS, RULER_ZOOM_MAX, useRuler } from './rulerStore.ts';
 
 /* Linha do tempo: transporte, relógio, velocidade, trilho com instantes-chave e marcas de hora. */
 export function Timeline() {
   const rulerStep = useRuler((s) => s.step);
   const setRulerStep = useRuler((s) => s.setStep);
+  const rulerZoom = useRuler((s) => s.zoom);
+  const setRulerZoom = useRuler((s) => s.setZoom);
   const scene = useStore((s) => s.scene);
   const t = useStore((s) => s.t);
   const playing = useStore((s) => s.playing);
@@ -47,6 +49,19 @@ export function Timeline() {
           <small>{clock.sub}</small>
         </div>
         <div className="spacer" />
+        <label className="ruler-pick" title="Zoom da régua: amplia a escala e acompanha o instante atual">
+          Zoom
+          <input
+            type="range"
+            min={1}
+            max={RULER_ZOOM_MAX}
+            step={0.1}
+            value={rulerZoom}
+            onChange={(e) => setRulerZoom(Number(e.target.value))}
+            aria-label="Zoom da régua"
+          />
+          <span className="ruler-zoom-val">{rulerZoom.toFixed(1).replace('.', ',')}×</span>
+        </label>
         <label className="ruler-pick" title="Espaçamento das marcas de hora na régua">
           Régua
           <select aria-label="Régua de tempo" value={rulerStep} onChange={(e) => setRulerStep(Number(e.target.value))}>
