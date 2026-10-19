@@ -31,6 +31,8 @@ export interface MapApi {
   render(scene: Scene, t: number): void;
   fitRegion(region: Region): void;
   setViewport(v: { lon: number; lat: number; zoom: number }): void;
+  /* Camadas extras (alcance, rota, névoa): recebidas da interface e desenhadas por cima do mapa. */
+  setExtraLayers(layers: Layer[]): void;
   onClick(cb: (e: MapClick) => void): void;
   onDragUnit(cb: (e: UnitDragEvent) => void): void;
   onDropFaction(cb: (e: FactionDropEvent) => void): void;
@@ -790,8 +792,12 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       }));
     }
 
+    layers.push(...extraLayers);
     return layers;
   }
+
+  /* Camadas extras (alcance, rota, névoa de guerra) vindas da interface; desenhadas por cima. */
+  let extraLayers: Layer[] = [];
 
   function commit(): void {
     if (!scene || disposed) return;
@@ -944,6 +950,10 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
     setViewport(v) {
       if (disposed) return;
       map.jumpTo({ center: [v.lon, v.lat], zoom: v.zoom });
+    },
+    setExtraLayers(layers) {
+      extraLayers = layers;
+      if (!disposed) commit();
     },
     onClick(cb) { clickCbs.push(cb); },
     onDragUnit(cb) { dragCbs.push(cb); },

@@ -4,6 +4,7 @@ import type { Selection } from '../state/types.ts';
 import { findRegionAt, loadRegions } from './geo.ts';
 import { pointerMods } from './keyboard.ts';
 import { parseUnitDrag, usePlacement } from './placement.ts';
+import { useOverlay } from './overlayState.ts';
 
 /* Regras de clique, arrastar e soltar no mapa, de acordo com a ferramenta ativa. */
 
@@ -106,6 +107,13 @@ function selectAtHit(hit: Hit): void {
 }
 
 export function handleMapClick(e: MapClick): void {
+  /* Escolha de ponto pedida pelo planejamento de rota: o clique vai para lá, sem editar a cena. */
+  const pick = useOverlay.getState().pick;
+  if (pick) {
+    useOverlay.getState().setPick(null);
+    pick({ lat: e.lat, lon: e.lon });
+    return;
+  }
   const s = st();
   const { lat, lon, hit } = e;
   /* Modo "colocar" (paleta de unidades): o clique põe uma unidade e o modo continua até Esc. */

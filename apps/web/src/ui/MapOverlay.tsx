@@ -1,6 +1,13 @@
 import { useStore } from '../state/store.ts';
 import { getMapHandle } from '../app/mapRegistry.ts';
 import { modeInfo } from '../app/modes.ts';
+import { useOverlay } from '../app/overlayState.ts';
+
+/* Ligação do modo apresentação: além de mover a câmera, o instante da cena acompanha o slide. */
+export function viewSlide(slide: { t: number; lat: number; lon: number; zoom: number }): void {
+  getMapHandle()?.api.setViewport({ lon: slide.lon, lat: slide.lat, zoom: slide.zoom });
+  useStore.getState().setT(slide.t);
+}
 
 /* Controles sobre o mapa: zoom, dica da ferramenta e legenda das forças. */
 export function MapOverlay() {
@@ -8,6 +15,10 @@ export function MapOverlay() {
   const dragging = useStore((s) => s.dragFac !== null);
   const factions = useStore((s) => s.scene.factions);
   const requestFit = useStore((s) => s.requestFit);
+  const fogOn = useOverlay((s) => s.fogOn);
+  const setFog = useOverlay((s) => s.setFog);
+  const presenting = useOverlay((s) => s.presenting);
+  const setPresenting = useOverlay((s) => s.setPresenting);
 
   const hint = dragging ? 'Solte sobre um país, uma região ou uma unidade.' : (modeInfo(mode)?.hint ?? '');
 
@@ -22,6 +33,24 @@ export function MapOverlay() {
         </button>
         <button className="btn icon" onClick={requestFit} title="Ajustar à área (F)" aria-label="Ajustar à área">
           ⤢
+        </button>
+        <button
+          className={`btn icon${fogOn ? ' on' : ''}`}
+          onClick={() => setFog(!fogOn)}
+          title="Névoa de guerra: cada força só vê perto das suas unidades"
+          aria-label="Névoa de guerra"
+          aria-pressed={fogOn}
+        >
+          ◐
+        </button>
+        <button
+          className={`btn icon${presenting ? ' on' : ''}`}
+          onClick={() => setPresenting(!presenting)}
+          title="Modo apresentação: passa pelos eventos com a câmera"
+          aria-label="Modo apresentação"
+          aria-pressed={presenting}
+        >
+          ▶
         </button>
       </div>
       <div className="hint" role="status">

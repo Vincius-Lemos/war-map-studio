@@ -36,6 +36,9 @@ export interface Unit {
   echelon: Echelon;
   note: string;
   path: Waypoint[];       // ordenado por t
+  parentId?: string;      // unidade superior na árvore de organização (ORBAT); ausente = raiz
+  visionKm?: number;      // alcance de visão (névoa de guerra); ausente = valor padrão do tipo
+  speedKmh?: number;      // velocidade para planejamento de rota; ausente = valor padrão do tipo
 }
 
 export interface Arrow {

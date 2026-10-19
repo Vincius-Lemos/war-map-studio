@@ -3,7 +3,9 @@ import { TopBar } from './TopBar.tsx';
 import { LeftPanel } from './left/LeftPanel.tsx';
 import { RightPanel } from './right/RightPanel.tsx';
 import { MapView } from './MapView.tsx';
-import { MapOverlay } from './MapOverlay.tsx';
+import { MapOverlay, viewSlide } from './MapOverlay.tsx';
+import { PresentationPlayer } from './presentation/PresentationPlayer.tsx';
+import { useOverlay } from '../app/overlayState.ts';
 import { MeasureTool } from './measure/MeasureTool.tsx';
 import { LayersPanel } from './layers/LayersPanel.tsx';
 import { Timeline } from './timeline/Timeline.tsx';
@@ -29,9 +31,17 @@ export function App() {
       <RightPanel />
       <Timeline />
       <Dialogs />
+      <PresentationHost />
       <Toasts />
     </div>
   );
+}
+
+/* Modo apresentação: rodapé com os slides dos eventos; a câmera e o instante acompanham o slide. */
+function PresentationHost() {
+  const presenting = useOverlay((s) => s.presenting);
+  if (!presenting) return null;
+  return <PresentationPlayer onSlide={viewSlide} />;
 }
 
 function Dialogs() {
