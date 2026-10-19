@@ -13,6 +13,8 @@ const exportMode = new URLSearchParams(location.search).has('export');
 useStore.setState({ exportMode, dialog: exportMode ? null : 'wiz' });
 
 if (exportMode) {
+  /* na exportação só o mapa aparece no quadro: a interface é escondida pelo CSS (.export-mode) */
+  document.documentElement.classList.add('export-mode');
   installExportApi();
 } else {
   const save = createSaver(() =>

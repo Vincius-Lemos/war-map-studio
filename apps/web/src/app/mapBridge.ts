@@ -25,6 +25,8 @@ export function startMap(container: HTMLElement): () => void {
   const schedule = () => {
     if (useStore.getState().exportMode) {
       renderNow();
+      /* contrato com o exportador (apps/export): avisa quando o quadro desse instante está pronto */
+      api.afterFrame(() => window.dispatchEvent(new CustomEvent('frame-rendered', { detail: { t: useStore.getState().t } })));
       return;
     }
     if (scheduled) return;

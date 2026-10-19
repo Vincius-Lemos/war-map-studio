@@ -2,9 +2,12 @@ import { useMemo } from 'react';
 import { clockParts, keyframes, SPEEDS } from '@map-draw/shared';
 import { useStore } from '../../state/store.ts';
 import { Track } from './Track.tsx';
+import { RULER_STEPS, useRuler } from './rulerStore.ts';
 
 /* Linha do tempo: transporte, relógio, velocidade, trilho com instantes-chave e marcas de hora. */
 export function Timeline() {
+  const rulerStep = useRuler((s) => s.step);
+  const setRulerStep = useRuler((s) => s.setStep);
   const scene = useStore((s) => s.scene);
   const t = useStore((s) => s.t);
   const playing = useStore((s) => s.playing);
@@ -44,6 +47,16 @@ export function Timeline() {
           <small>{clock.sub}</small>
         </div>
         <div className="spacer" />
+        <label className="ruler-pick" title="Espaçamento das marcas de hora na régua">
+          Régua
+          <select aria-label="Régua de tempo" value={rulerStep} onChange={(e) => setRulerStep(Number(e.target.value))}>
+            {RULER_STEPS.map((s) => (
+              <option key={s.hours} value={s.hours}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="seg" role="group" aria-label="Velocidade">
           {SPEEDS.map((v) => (
             <button

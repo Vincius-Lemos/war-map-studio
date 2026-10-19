@@ -7,6 +7,8 @@ const TEX_MAX = 256;
 
 const images = new Map<string, Promise<HTMLImageElement | null>>();
 
+const FLAG_TIMEOUT_MS = 8000;
+
 export function flagUrl(code: string | undefined): string {
   return code ? `https://flagcdn.com/${code.toLowerCase()}.svg` : '';
 }
@@ -29,15 +31,15 @@ export function loadImage(src: string): Promise<HTMLImageElement | null> {
   if (!p) {
     p = (async () => {
       try {
-        let url = src;
-        if (!src.startsWith('data:')) {
-          const r = await fetch(src);
-          if (!r.ok) return null;
-          url = URL.createObjectURL(await r.blob());
-        }
+        /* imagem remota: <img crossOrigin> (o CDN envia CORS), sem fetch, que travava em alguns navegadores.
+           Limite de tempo: uma bandeira que não chega não pode segurar a tela nem a exportação. */
         const img = new Image();
-        img.src = url;
-        await img.decode();
+        if (!src.startsWith('data:')) img.crossOrigin = 'anonymous';
+        img.src = src;
+        await Promise.race([
+          img.decode(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), FLAG_TIMEOUT_MS)),
+        ]);
         return img;
       } catch {
         return null;

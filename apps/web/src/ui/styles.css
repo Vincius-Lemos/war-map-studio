@@ -98,6 +98,8 @@ table.wp input { padding: 4px 6px; }
 .tl-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .clock { font-family: Consolas, "Courier New", monospace; font-size: 20px; font-weight: 700; letter-spacing: .5px; min-width: 260px; }
 .clock small { display: block; font-size: 11px; color: var(--mut); font-weight: 500; letter-spacing: 0; }
+.ruler-pick { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mut); white-space: nowrap; }
+.ruler-pick select { background: var(--panel2, #141b26); color: #e7edf4; border: 1px solid #2c3a4f; border-radius: 7px; padding: 4px 6px; font-size: 12px; }
 .track { position: relative; flex: 1; height: 44px; min-width: 200px; }
 .track .rail { position: absolute; left: 0; right: 0; top: 20px; height: 6px; border-radius: 4px; background: var(--panel3); }
 .track .fill { position: absolute; left: 0; top: 20px; height: 6px; border-radius: 4px; background: var(--acc); pointer-events: none; }
@@ -141,3 +143,10 @@ table.wp input { padding: 4px 6px; }
 .toast.out { opacity: 0; transform: translateY(6px); }
 @keyframes in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (max-width: 1180px) { .app { grid-template-columns: 240px 1fr 280px; } .clock { min-width: 200px; font-size: 17px; } }
+
+/* Modo de exportação (?export=1): o quadro do vídeo mostra só o mapa, em tela cheia. */
+.export-mode .app { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.export-mode .top, .export-mode .side, .export-mode #timeline, .export-mode .mapctl, .export-mode .hint,
+.export-mode .legend, .export-mode .mt-btn, .export-mode .rl-panel, .export-mode #toasts, .export-mode .toasts,
+.export-mode .sel-bar, .export-mode .selbar, .export-mode .presentation { display: none !important; }
+.export-mode .stage { grid-column: 1; grid-row: 1; }

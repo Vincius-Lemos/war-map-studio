@@ -48,6 +48,8 @@ export interface MapApi {
   toLatLon(x: number, y: number): { lat: number; lon: number } | null;
   /* Troca a grade desenhada e redesenha. Vale até a cena receber outra grade (edição ou render com outra cena). */
   setGrid(g: GridConfig): void;
+  /* Chama `cb` depois que o mapa terminou de desenhar o quadro atual (usado pela exportação). */
+  afterFrame(cb: () => void): void;
 }
 
 export interface MapOptions {
@@ -921,9 +923,11 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
   async function ready(): Promise<void> {
     await countriesReady;
     await styleReady;
-    await Promise.all(countries
+    /* as bandeiras que não carregarem em 20 s ficam de fora: ready() não pode travar por causa delas */
+    const flags = Promise.all(countries
       .filter(f => f.properties.iso2)
       .map(f => textures.wait('c', f.properties.iso2, flagUrl(f.properties.iso2), f, flagBounds(f))));
+    await Promise.race([flags, new Promise(res => setTimeout(res, 20000))]);
     schedule();
   }
 
@@ -992,6 +996,12 @@ export function createMap(container: HTMLElement, opts: MapOptions = {}): MapApi
       if (disposed) return;
       gridOverride = normalizeGrid(g);
       commit();
+    },
+    afterFrame(cb) {
+      if (disposed) return;
+      /* 'idle' do MapLibre + um quadro de animação: o deck.gl já desenhou no canvas */
+      map.once('idle', () => requestAnimationFrame(() => cb()));
+      map.triggerRepaint();
     },
   };
   return api;

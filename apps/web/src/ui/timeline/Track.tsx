@@ -1,4 +1,8 @@
 import { clockParts, tickStep, type Scene } from '@map-draw/shared';
+import { useRuler } from './rulerStore.ts';
+
+/* máximo de marcas na régua: evita milhares de rótulos em cenas longas com passo pequeno */
+const MAX_TICKS = 150;
 
 interface Props {
   scene: Scene;
@@ -12,9 +16,14 @@ export function Track({ scene, t, keys, onSeek }: Props) {
   const dur = scene.durationH;
   const pct = (v: number) => ((v / dur) * 100).toFixed(3) + '%';
   const eventTimes = new Set(scene.events.map((e) => Math.round(e.t * 100)));
-  const step = tickStep(dur);
+  const chosen = useRuler((s) => s.step);
+  /* passo escolhido pelo usuário, ou o automático; nunca abaixo do que cabe em MAX_TICKS */
+  const step = Math.max(chosen || tickStep(dur), dur / MAX_TICKS);
+  const dayLabels = step >= 24;
   const ticks: number[] = [];
   for (let x = 0; x <= dur + 0.001; x += step) ticks.push(x);
+  /* com muitas marcas, mostra um rótulo a cada N para não se sobreporem (as marcas continuam) */
+  const labelEvery = ticks.length > 30 ? Math.ceil(ticks.length / 24) : 1;
 
   return (
     <>
@@ -47,9 +56,11 @@ export function Track({ scene, t, keys, onSeek }: Props) {
         />
       </div>
       <div className="ticks">
-        {ticks.map((x) => (
+        {ticks.map((x, i) => (
           <span key={x} style={{ left: pct(x) }}>
-            {clockParts(scene, x).main.replace(/^Dia \d+ · /, '')}
+            {i % labelEvery === 0
+              ? dayLabels ? clockParts(scene, x).main.split(' · ')[0] : clockParts(scene, x).main.replace(/^Dia \d+ · /, '')
+              : ''}
           </span>
         ))}
       </div>
